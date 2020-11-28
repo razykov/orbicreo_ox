@@ -1,0 +1,11 @@
+# binaries
+bin/
+lib/
+
+# Qt creator
+*.cflags
+*.creator.user
+*.files
+*.creator
+*.cxxflags
+*.includes

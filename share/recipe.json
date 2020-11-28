@@ -1,0 +1,29 @@
+{
+    "general" : {
+        "project_name" : "empty",
+        "project_type" : "app", 
+
+        "_export_includes" : [
+            "<pthread.h>",
+            "<libusb-1.0/libusb.h>"
+        ],
+
+        "compiler_options" : [
+            "Wall",
+            "Wextra",
+            "Werror",
+        ],
+
+        "_dependency_list" : [
+            "json-c",
+        ],
+        
+        "dependency_include" : [
+            ""
+        ],
+
+        "compiler_std" : "c99",
+
+        "directory_dest" : "path/to/app"
+    }
+}
