@@ -2,6 +2,7 @@
 #define ORB_TYPES_H
 
 #include <stddef.h>
+#include <json-c/json.h>
 
 #define ORB_COLOUR_A8_RED    (1)
 #define ORB_COLOUR_A8_YELLOW (3)
@@ -38,6 +39,9 @@ struct orb_ctx {
     char root[ORB_ROOT_SZ];
     char proj_path[ORB_PATH_SZ];
 
+    char * target_proj;
+    json_object * proj_set;
+
     enum orb_goal goal;
 };
 
@@ -46,8 +50,11 @@ struct orb_bts {
     size_t size;
 };
 
-void orb_bts_free(struct orb_bts * bts);
 struct orb_bts * orb_bts_malloc(size_t size);
+void orb_bts_free(struct orb_bts * bts);
+
+struct orb_ctx * orb_ctx_create(char ** argv);
+void orb_ctx_destroy(struct orb_ctx * ctx);
 
 void orb_bts_append_u8(struct orb_bts * bts, u8 byte);
 

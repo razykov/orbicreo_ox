@@ -9,7 +9,7 @@
 #define EMPTY_PRJ "projects/empty_app/"
 
 bool orb_init(void) {
-    const char * root = context.root;
+    const char * root = context->root;
 
     orb_inf("orbicreo init");
 

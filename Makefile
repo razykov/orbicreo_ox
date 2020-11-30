@@ -26,8 +26,10 @@ SRC += src/orb_json.c
 SRC += src/orb_utils_str.c
 SRC += src/orb_threads.c
 SRC += src/orb_build.c
+SRC += src/orb_build_utils.c
 SRC += src/orb_build_link.c
 SRC += src/orb_build_compile.c
+SRC += src/orb_build_mkinclude.c
 
 all: bin
 	$(CC) $(OPT) $(SRC) $(GCFLAGS) -o $(PROJECT)

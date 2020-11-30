@@ -7,6 +7,8 @@
 
 #define SHA1_LEN (20)
 
+#define orb_try(PRED) if (!(PRED)) return false
+
 bool orb_dir_exist(const char * path);
 
 bool orb_mkdir_p(const char * dir);

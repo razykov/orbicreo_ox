@@ -3,6 +3,7 @@
 #include "../src/orb_utils.h"
 #include "../src/orb_threads.h"
 #include "../src/orb_utils_str.h"
+#include "../src/orb_build_utils.h"
 #include "../src/orb_build_compile.h"
 
 struct cmpl_payload {
@@ -32,6 +33,8 @@ static void _compiler_options(json_object * project, char ** cmd, size_t * len) 
 
     if (!json) return;
 
+    orb_json_string(json, NULL, "fPIC");
+
     for(size_t i = 0; i < json_object_array_length(json); ++i) {
         json_object * elem = json_object_array_get_idx(json, i);
 
@@ -41,8 +44,28 @@ static void _compiler_options(json_object * project, char ** cmd, size_t * len) 
     }
 }
 
+static void _dependency_include(json_object * project, char ** cmd, size_t * len) {
+    json_object * gnrl;
+    json_object * json = orb_json_find(project, "recipe");
+
+    gnrl = json = orb_json_find(json, "general");
+    json = orb_json_find(json, "dependency_include");
+
+    if (!json)
+        json = orb_json_array(gnrl, "dependency_include");
+
+    orb_json_string(json, NULL, "includes");
+
+    for(size_t i = 0; i < json_object_array_length(json); ++i) {
+        json_object * elem = json_object_array_get_idx(json, i);
+
+        *cmd = orb_strexp(*cmd, len, " -I");
+        *cmd = orb_strexp(*cmd, len, json_object_get_string(elem));
+    }
+}
+
 static char * _file_compile_command(struct cmpl_payload * pld) {
-    size_t len;
+    size_t len = 0;
     const char * ofile;
     char * cmd = calloc(1, sizeof(char));
 
@@ -53,7 +76,10 @@ static char * _file_compile_command(struct cmpl_payload * pld) {
     cmd = orb_strexp(cmd, &len, _compiler(pld->project));
     cmd = orb_strexp(cmd, &len, " -c ");
 
-    _compiler_options(pld->project, &cmd, &len);
+    _compiler_options  (pld->project, &cmd, &len);
+    _dependency_include(pld->project, &cmd, &len);
+    orb_monorepo_libs(&cmd, &len);
+    cmd = orb_strexp(cmd, &len, " ");
 
     cmd = orb_strexp(cmd, &len, pld->cfile);
     cmd = orb_strexp(cmd, &len, " -o ");

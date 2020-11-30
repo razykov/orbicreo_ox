@@ -7,7 +7,7 @@
 
 
 static void _help(void) {
-    orb_txt("Using: %s [opt]... ", context.appname);
+    orb_txt("Using: %s [opt]... ", context->appname);
     orb_txt("");
     orb_txt("Options:");
     orb_txt("    -h, --help     Print this message");
@@ -20,7 +20,7 @@ static void _help(void) {
 }
 
 static void _exec_goal() {
-    switch (context.goal) {
+    switch (context->goal) {
     case ORB_GOAL_BUILD: orb_build(); break;
     case ORB_GOAL_INIT : orb_init();  break;
     case ORB_GOAL_HELP : _help();     break;
@@ -47,6 +47,8 @@ i32 main (i32 argc, char ** argv) {
 
     _exec_goal();
 //    ((void)_exec_goal);
+
+    orb_ctx_destroy(context);
 
     return EXIT_SUCCESS;
 }

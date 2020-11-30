@@ -3,7 +3,7 @@
 
 #include "../src/orb_types.h"
 
-extern struct orb_ctx context;
+extern struct orb_ctx * context;
 
 bool orb_args_parse(i32 argc, char ** argv);
 
