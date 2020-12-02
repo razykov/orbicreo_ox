@@ -4,6 +4,7 @@
 #include "../src/orb_utils.h"
 #include "../src/orb_build.h"
 #include "../src/orb_init.h"
+#include "../src/orb_build_utils.h"
 
 
 static void _help(void) {
@@ -34,16 +35,10 @@ i32 main (i32 argc, char ** argv) {
     if (!orb_args_parse(argc, argv))
         return EXIT_FAILURE;
 
-//    u8 sha[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
-//    orb_inf("%s", orb_sha2str(orb_file_sha1("/home/razykov/orbi_test/projects/empty/func/sum.c")));
-//    orb_inf("%s", orb_sha2str(sha));
-//    orb_inf("%s", orb_get_dir("/home/razykov/atol5_sum.png"));
-//    orb_inf("%s", orb_dir_exist("/home/razykov/atol5_sum.png") ? "true" : "false");
-//    orb_mkdir_p("/tmp/test/abc/def");
-//    json_object * json = json_object_from_file("/home/razykov/orbi_test/projects/empty/version.json");
-//    orb_txt("%s",
-//            json_object_to_json_string_ext(json, JSON_C_TO_STRING_SPACED |
-//                                                 JSON_C_TO_STRING_PRETTY));
+    size_t len = 0;
+    char * str = calloc(1, 1);
+    orb_monorepo_libs(&str, &len);
+    orb_txt("%s", str);
 
     _exec_goal();
 //    ((void)_exec_goal);

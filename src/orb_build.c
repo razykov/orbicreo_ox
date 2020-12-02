@@ -110,21 +110,26 @@ static bool _build_depends(json_object * project) {
 
             dep = orb_json_find(context->proj_set, depstr);
             if (dep)
-                orb_try(_build_project(dep));
+                if(!_build_project(dep)) {
+                    orb_err("project '%s' build failed", depstr);
+                    return false;
+                }
         }
     return true;
 }
 
 static bool _build_project(json_object * project) {
-    _build_depends(project);
+    bool ret = json_object_get_boolean(orb_json_find(project, "built"));
+    if (ret)
+        return true;
+
+    orb_try(_build_depends(project));
 
     orb_inf("%s build start", orb_json_get_string(project, "project_name"));
 
     orb_try(_mkobjdir(project));
     orb_json_move(project,
                   _code_files(orb_json_get_string(project, "path")), "c_files");
-
-    orb_txt("%s", json_object_to_json_string_ext(project, JSON_C_TO_STRING_PRETTY));
 
     orb_txt("compile");
     orb_try(orb_compile_project(project));
@@ -133,6 +138,9 @@ static bool _build_project(json_object * project) {
     orb_txt("project include generate");
     orb_try(orb_mkinclude(project));
 
+    orb_json_bool(project, "built", true);
+
+//    orb_txt("%s", json_object_to_json_string_ext(project, JSON_C_TO_STRING_PRETTY));
 
     return true;
 }

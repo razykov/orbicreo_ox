@@ -14,8 +14,11 @@ struct cmpl_payload {
 };
 
 static const char * _compiler(json_object * project) {
-    const char * cn = orb_json_get_string(project, "compiler_name");
-    return cn ? cn : "cc";
+    const char * compiler;
+    project = orb_json_find(project, "recipe");
+    project = orb_json_find(project, "general");
+    compiler  = orb_json_get_string(project, "compiler_name");
+    return compiler ? compiler : "cc";
 }
 
 static const char * _obj_path(struct cmpl_payload * pld) {
@@ -25,15 +28,31 @@ static const char * _obj_path(struct cmpl_payload * pld) {
     return buff;
 }
 
+static json_object * _comp_opt(json_object * project) {
+    project = orb_json_find(project, "recipe");
+    project = orb_json_find(project, "general");
+    project = orb_json_find(project, "compiler_options");
+    return project;
+}
+
+static const char * _comp_std(json_object * project) {
+    project = orb_json_find(project, "recipe");
+    project = orb_json_find(project, "general");
+    return orb_json_get_string(project, "compiler_std");
+}
+
+static json_object * _dep_incl(json_object * project) {
+    json_object * gen;
+    project = orb_json_find(project, "recipe");
+    gen = project = orb_json_find(project, "general");
+    project = orb_json_find(project, "dependency_include");
+    return project ? project : orb_json_array(gen, "dependency_include");
+}
+
 static void _compiler_options(json_object * project, char ** cmd, size_t * len) {
-    json_object * json = orb_json_find(project, "recipe");
-
-    json = orb_json_find(json, "general");
-    json = orb_json_find(json, "compiler_options");
-
+    const char * comp_std;
+    json_object * json = _comp_opt(project);
     if (!json) return;
-
-    orb_json_string(json, NULL, "fPIC");
 
     for(size_t i = 0; i < json_object_array_length(json); ++i) {
         json_object * elem = json_object_array_get_idx(json, i);
@@ -41,6 +60,12 @@ static void _compiler_options(json_object * project, char ** cmd, size_t * len) 
         *cmd = orb_strexp(*cmd, len, "-");
         *cmd = orb_strexp(*cmd, len, json_object_get_string(elem));
         *cmd = orb_strexp(*cmd, len, " ");
+    }
+
+    comp_std = _comp_std(project);
+    if (comp_std) {
+        *cmd = orb_strexp(*cmd, len, "-std=");
+        *cmd = orb_strexp(*cmd, len, comp_std);
     }
 }
 
@@ -53,8 +78,6 @@ static void _dependency_include(json_object * project, char ** cmd, size_t * len
 
     if (!json)
         json = orb_json_array(gnrl, "dependency_include");
-
-    orb_json_string(json, NULL, "includes");
 
     for(size_t i = 0; i < json_object_array_length(json); ++i) {
         json_object * elem = json_object_array_get_idx(json, i);
@@ -130,9 +153,14 @@ static bool _compile_ret_parse(void * ret) {
 
 bool orb_compile_project(json_object * project) {
     orb_thrds_t thrds = orb_thrd_create();
+    json_object * comp_opt = _comp_opt(project);
     json_object * c_files = orb_json_find(project, "c_files");
 
+    orb_try(comp_opt);
+
     orb_json_array(project, "o_files");
+    orb_json_string(comp_opt, NULL, "fPIC");
+    orb_json_string(_dep_incl(project), NULL, "includes");
 
     for(size_t i = 0; i < json_object_array_length(c_files); ++i) {
         const char * cfile;

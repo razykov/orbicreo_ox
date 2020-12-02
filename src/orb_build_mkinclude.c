@@ -9,6 +9,8 @@
 #include "../src/orb_build_utils.h"
 #include "../src/orb_build_mkinclude.h"
 
+static void _hfile_exports(const char * hfile,
+                           FILE * file, json_object * exported);
 
 static json_object * _h_files(json_object * project) {
     json_object * array = orb_json_array(project, "h_files");
@@ -16,12 +18,77 @@ static json_object * _h_files(json_object * project) {
     return array;
 }
 
-static void _hfile_exports(const char * hfile, FILE * file) {
+static bool _continue_export(const char * hfile, json_object * exported)  {
+    json_object * exist = orb_json_find(exported, hfile);
+    return exist == NULL;
+}
+
+static const char * _dep_hfile_name(const char * line) {
+    char * q1;
+    char * q2;
+    static __thread char buff[B_KB(1)];
+
+    memset(buff, 0, B_KB(1));
+    q1 = strchr(line, '"');
+    if (!q1) return NULL;
+    q2 = strchr(q1 + 1, '"');
+    if (!q2) return NULL;
+    memcpy(buff, q1 + 1, q2 - q1 - 1);
+
+    return buff;
+}
+
+static const char * _dep_hfile_dir(const char * hfile) {
+    const char * slh = hfile;
+    const char * ptr = hfile;
+    static __thread char buff[B_KB(2)];
+
+    do if (*ptr == '/') slh = ptr;
+    while (*(ptr++));
+
+    strncpy(buff, hfile, slh - hfile);
+
+    return buff;
+}
+
+static void export_depends(const char * hfile,
+                           FILE * file, json_object * exported) {
+    FILE * fp;
+    ssize_t nread;
+    size_t len = 0;
+    char * line = NULL;
+    char * inc;
+
+    fp = fopen(hfile, "r");
+    if (!fp) return;
+
+    while ((nread = getline(&line, &len, fp)) != -1) {
+        const char * deph;
+
+        if ( !(inc = strstr(line, "#include" )) ) continue;
+
+        deph = _dep_hfile_name(inc + strlen("#include"));
+        if (!deph) continue;
+
+        _hfile_exports(orb_cat(_dep_hfile_dir(hfile), deph), file, exported);
+    }
+
+    ((void)file);
+    ((void)exported);
+
+    fclose(fp);
+}
+
+static void _hfile_exports(const char * hfile,
+                           FILE * file, json_object * exported) {
     FILE * fp;
     bool export = false;
     ssize_t nread;
     size_t len = 0;
     char * line = NULL;
+
+    if (!_continue_export(hfile, exported)) return;
+    export_depends(hfile, file, exported);
 
     fp = fopen(hfile, "r");
     if (!fp) return;
@@ -38,14 +105,20 @@ static void _hfile_exports(const char * hfile, FILE * file) {
     }
 
     fclose(fp);
+
+    orb_json_bool(exported, hfile, true);
 }
 
 static void _hfiles_iter(json_object * h_files, FILE * file) {
+    json_object * exported = orb_json_object(NULL, NULL);
+
     for(size_t i = 0; i < json_object_array_length(h_files); ++i) {
         const char * hfile;
         hfile = json_object_get_string(json_object_array_get_idx(h_files, i));
-        _hfile_exports(hfile, file);
+        _hfile_exports(hfile, file, exported);
     }
+
+    json_object_put(exported);
 }
 
 static const char * _include_fname(json_object * project) {
@@ -57,12 +130,8 @@ static const char * _include_fname(json_object * project) {
 
 static const char * _incduard(json_object * project) {
     static __thread char incduard[256] = { 0 };
-
-    if (incduard[0] == '\0') {
-        sprintf(incduard, "%s_H", orb_json_get_string(project, "project_name"));
-        orb_upstr(incduard);
-    }
-
+    sprintf(incduard, "%s_H", orb_json_get_string(project, "project_name"));
+    orb_upstr(incduard);
     return incduard;
 }
 

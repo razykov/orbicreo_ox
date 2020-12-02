@@ -1,4 +1,5 @@
 #include <string.h>
+#include <sys/wait.h>
 #include "../src/orb_log.h"
 #include "../src/orb_args.h"
 #include "../src/orb_utils.h"
@@ -15,7 +16,7 @@ static const char * _linker(json_object * project) {
     const char * linker;
     project = orb_json_find(project, "recipe");
     project = orb_json_find(project, "general");
-    linker = orb_json_get_string(project, "linker");
+    linker = orb_json_get_string(project, "linker_name");
     return linker ? linker : "cc";
 }
 
@@ -92,7 +93,7 @@ bool orb_link_project(json_object * project) {
 
     orb_mkdir_p(_dest(project));
 
-    system(cmd);
+    orb_try(WEXITSTATUS(system(cmd)) == 0);
 
     return true;
 }
