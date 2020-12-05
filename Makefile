@@ -30,6 +30,7 @@ SRC += src/orb_build_utils.c
 SRC += src/orb_build_link.c
 SRC += src/orb_build_compile.c
 SRC += src/orb_build_mkinclude.c
+SRC += src/orb_goal_list.c
 
 all: bin
 	$(CC) $(OPT) $(SRC) $(GCFLAGS) -o $(PROJECT)

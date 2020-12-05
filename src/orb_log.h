@@ -10,17 +10,24 @@
 
 /*! \brief Print error message */
 #define orb_err(fmt, ...) _cprint(stderr, ORB_COLOUR_A8_RED, \
-                                      FLAG_TIME | FLAG_ERROR, \
-                                      __PRETTY_FUNCTION__, fmt, ##__VA_ARGS__)
+                                  FLAG_TIME | FLAG_ERROR, \
+                                  __PRETTY_FUNCTION__, fmt, ##__VA_ARGS__)
+
+/*! \brief Print user error message */
+#define orb_usrerr(fmt, ...) _cprint(stderr, ORB_COLOUR_A8_RED, FLAG_NONE, \
+                                     "", fmt, ##__VA_ARGS__)
+
 /*! \brief Print warning message */
 #define orb_wrn(fmt, ...) _cprint(stderr, ORB_COLOUR_A8_YELLOW, FLAG_TIME, \
-                                      __PRETTY_FUNCTION__, fmt, ##__VA_ARGS__)
+                                  __PRETTY_FUNCTION__, fmt, ##__VA_ARGS__)
+
 /*! \brief Print information message */
 #define orb_inf(fmt, ...) _cprint(stdout, ORB_COLOUR_A8_BLUE, FLAG_TIME, \
-                                      "", fmt, ##__VA_ARGS__)
+                                  "", fmt, ##__VA_ARGS__)
+
 /*! \brief Print plain text */
 #define orb_txt(fmt, ...) _cprint(stdout, ORB_COLOUR_A8_WHITE, FLAG_NONE, \
-                                      "", fmt, ##__VA_ARGS__)
+                                  "", fmt, ##__VA_ARGS__)
 
 /*!
  * \brief Basic print function

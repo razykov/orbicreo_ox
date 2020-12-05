@@ -22,11 +22,12 @@ bool orb_args_parse(i32 argc, char ** argv) {
             { "help",    no_argument,       0, 'h' },
             { "init",    no_argument,       0, 'i' },
             { "build",   no_argument,       0, 'b' },
+            { "list",    no_argument,       0, 'l' },
             { "project", optional_argument, 0, 'p' },
             { 0, 0, 0, 0 }
         };
 
-        c = getopt_long(argc, argv, "bhip:", long_options, &option_index);
+        c = getopt_long(argc, argv, "bhilp:", long_options, &option_index);
         if (c == -1) break;
 
         switch (c) {
@@ -44,6 +45,10 @@ bool orb_args_parse(i32 argc, char ** argv) {
 
         case 'b':
             context->goal = ORB_GOAL_BUILD;
+            break;
+
+        case 'l':
+            context->goal = ORB_GOAL_LIST;
             break;
 
         case 'p':

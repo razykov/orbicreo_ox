@@ -15,4 +15,6 @@ void orb_monorepo_libs(char ** cmd, size_t * len);
 
 json_object * orb_dependency_list(json_object * project);
 
+json_object * orb_projects_set(void);
+
 #endif /* ORB_BUILD_UTILS_H */

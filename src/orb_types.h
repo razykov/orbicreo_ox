@@ -31,7 +31,8 @@ typedef enum {
 enum orb_goal {
     ORB_GOAL_BUILD = 0,
     ORB_GOAL_HELP,
-    ORB_GOAL_INIT
+    ORB_GOAL_INIT,
+    ORB_GOAL_LIST
 };
 
 struct orb_ctx {
@@ -43,6 +44,8 @@ struct orb_ctx {
     json_object * proj_set;
 
     enum orb_goal goal;
+
+    bool verbose;
 };
 
 struct orb_bts {
