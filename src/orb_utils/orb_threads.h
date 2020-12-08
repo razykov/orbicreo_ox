@@ -2,7 +2,7 @@
 #define ORB_THREADS_H
 
 #include <pthread.h>
-#include "../src/orb_types.h"
+#include "../orb_types/orb_types.h"
 
 typedef struct orb_thrds * orb_thrds_t;
 

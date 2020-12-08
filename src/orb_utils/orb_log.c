@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <pthread.h>
-#include "../src/orb_log.h"
+#include "orb_log.h"
 
 #define COL_SET "\033[1;3%dm"
 #define COL_CLR "\033[0m"

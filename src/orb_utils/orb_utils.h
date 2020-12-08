@@ -3,7 +3,7 @@
 
 #include <sys/types.h>
 #include <json-c/json.h>
-#include "../src/orb_types.h"
+#include "../orb_types/orb_types.h"
 
 #define SHA1_LEN (20)
 

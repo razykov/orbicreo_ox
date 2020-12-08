@@ -2,7 +2,7 @@
 #define ORB_BUILD_UTILS_H
 
 #include <dirent.h>
-#include "../src/orb_json.h"
+#include "../orb_types/orb_json.h"
 
 const char * orb_proj_type(json_object * project);
 

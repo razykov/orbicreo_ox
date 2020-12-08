@@ -1,7 +1,7 @@
 #ifndef ORB_ARGS_H
 #define ORB_ARGS_H
 
-#include "../src/orb_types.h"
+#include "../orb_types/orb_types.h"
 
 extern struct orb_ctx * context;
 

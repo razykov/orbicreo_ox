@@ -2,7 +2,7 @@
 #define ORB_LOG_H
 
 #include <stdio.h>
-#include "../src/orb_types.h"
+#include "../orb_types/orb_types.h"
 
 #define FLAG_NONE  (0 << 0)
 #define FLAG_ERROR (1 << 0)

@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "../src/orb_log.h"
+#include "../orb_utils/orb_log.h"
 
 void orb_bts_free(struct orb_bts * bts) {
     if (bts) {

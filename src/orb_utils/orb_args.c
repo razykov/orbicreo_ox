@@ -6,7 +6,7 @@
 #include <getopt.h>
 #include <unistd.h>
 
-#include "../src/orb_args.h"
+#include "orb_args.h"
 
 struct orb_ctx * context;
 

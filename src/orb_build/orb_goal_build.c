@@ -2,14 +2,14 @@
 #include <dirent.h>
 #include <string.h>
 #include <json-c/json.h>
-#include "../src/orb_log.h"
-#include "../src/orb_args.h"
-#include "../src/orb_utils.h"
-#include "../src/orb_build.h"
-#include "../src/orb_build_link.h"
-#include "../src/orb_build_utils.h"
-#include "../src/orb_build_compile.h"
-#include "../src/orb_build_mkinclude.h"
+#include "../orb_utils/orb_log.h"
+#include "../orb_utils/orb_args.h"
+#include "../orb_utils/orb_utils.h"
+#include "../orb_build/orb_goal_build.h"
+#include "../orb_build/orb_build_link.h"
+#include "../orb_build/orb_build_utils.h"
+#include "../orb_build/orb_build_compile.h"
+#include "../orb_build/orb_build_mkinclude.h"
 
 
 static bool _build_project(json_object * project);
@@ -87,7 +87,7 @@ static void _rm_build(void) {
     system(buff);
 }
 
-bool orb_build(void) {
+bool orb_goal_build(void) {
     _rm_build();
     if (!_init_dirs())
         return false;

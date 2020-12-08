@@ -1,5 +1,5 @@
-#include "../src/orb_log.h"
-#include "../src/orb_json.h"
+#include "orb_json.h"
+#include "../orb_utils/orb_log.h"
 
 
 void orb_json_move(json_object * parent, json_object * child, const char * name) {

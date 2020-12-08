@@ -2,7 +2,7 @@
 #define ORB_JSON_H
 
 #include <json-c/json.h>
-#include "../src/orb_types.h"
+#include "../orb_types/orb_types.h"
 
 json_object * orb_json_object(json_object * parent, const char * name) ;
 

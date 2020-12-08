@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <openssl/sha.h>
-#include "../src/orb_utils.h"
-#include "../src/orb_log.h"
+#include "orb_utils.h"
+#include "../orb_utils/orb_log.h"
 
 #define PATH_MAX_STRING_SIZE (B_KB(4))
 #define RWBUF_SIZE           (B_KB(1))

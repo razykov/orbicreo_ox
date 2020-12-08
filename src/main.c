@@ -1,11 +1,11 @@
 #include <stdlib.h>
-#include "../src/orb_log.h"
-#include "../src/orb_args.h"
-#include "../src/orb_utils.h"
-#include "../src/orb_build.h"
-#include "../src/orb_init.h"
-#include "../src/orb_build_utils.h"
-#include "../src/orb_goal_list.h"
+#include "orb_utils/orb_log.h"
+#include "orb_utils/orb_args.h"
+#include "orb_utils/orb_utils.h"
+#include "orb_init/orb_goal_init.h"
+#include "orb_list/orb_goal_list.h"
+#include "orb_build/orb_goal_build.h"
+#include "orb_build/orb_build_utils.h"
 
 
 static void _help(void) {
@@ -25,8 +25,8 @@ static void _help(void) {
 
 static void _exec_goal() {
     switch (context->goal) {
-    case ORB_GOAL_BUILD: orb_build();     break;
-    case ORB_GOAL_INIT : orb_init();      break;
+    case ORB_GOAL_BUILD: orb_goal_build();     break;
+    case ORB_GOAL_INIT : orb_goal_init();      break;
     case ORB_GOAL_LIST : orb_goal_list(); break;
     case ORB_GOAL_HELP : _help();         break;
     default:

@@ -1,10 +1,10 @@
 #include <sys/wait.h>
-#include "../src/orb_log.h"
-#include "../src/orb_utils.h"
-#include "../src/orb_threads.h"
-#include "../src/orb_utils_str.h"
-#include "../src/orb_build_utils.h"
-#include "../src/orb_build_compile.h"
+#include "../orb_utils/orb_log.h"
+#include "../orb_utils/orb_utils.h"
+#include "../orb_utils/orb_threads.h"
+#include "../orb_utils/orb_utils_str.h"
+#include "../orb_build/orb_build_utils.h"
+#include "../orb_build/orb_build_compile.h"
 
 struct cmpl_payload {
     bool res;

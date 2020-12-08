@@ -2,11 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
-#include "../src/orb_log.h"
-#include "../src/orb_args.h"
-#include "../src/orb_utils.h"
-#include "../src/orb_utils_str.h"
-#include "../src/orb_build_utils.h"
+#include "orb_build_utils.h"
+#include "../orb_utils/orb_log.h"
+#include "../orb_utils/orb_args.h"
+#include "../orb_utils/orb_utils.h"
+#include "../orb_utils/orb_utils_str.h"
 
 const char * orb_proj_type(json_object * project) {
     project = orb_json_find(project, "recipe");

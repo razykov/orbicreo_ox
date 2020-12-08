@@ -2,12 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../src/orb_args.h"
-#include "../src/orb_log.h"
-#include "../src/orb_utils.h"
-#include "../src/orb_utils_str.h"
-#include "../src/orb_build_utils.h"
-#include "../src/orb_build_mkinclude.h"
+#include "../orb_utils/orb_args.h"
+#include "../orb_utils/orb_log.h"
+#include "../orb_utils/orb_utils.h"
+#include "../orb_utils/orb_utils_str.h"
+#include "../orb_build/orb_build_utils.h"
+#include "../orb_build/orb_build_mkinclude.h"
+
 
 static void _hfile_exports(const char * hfile,
                            FILE * file, json_object * exported);

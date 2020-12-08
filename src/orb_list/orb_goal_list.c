@@ -1,6 +1,6 @@
-#include "../src/orb_log.h"
-#include "../src/orb_goal_list.h"
-#include "../src/orb_build_utils.h"
+#include "orb_goal_list.h"
+#include "../orb_utils/orb_log.h"
+#include "../orb_build/orb_build_utils.h"
 
 static void _print_projects_list(json_object * set) {
     json_object_object_foreach(set, key, val) {

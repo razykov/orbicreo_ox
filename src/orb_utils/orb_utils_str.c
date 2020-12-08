@@ -1,7 +1,6 @@
 #include <string.h>
-#include "../src/orb_log.h"
-#include "../src/orb_types.h"
-#include "../src/orb_utils_str.h"
+#include "orb_utils_str.h"
+#include "../orb_utils/orb_log.h"
 
 #define IS_SMALL_LETTER(LETTER) (('a' <= LETTER) && (LETTER <= 'z'))
 #define IS_BIG_LETTER(LETTER)   (('A' <= LETTER) && (LETTER <= 'Z'))

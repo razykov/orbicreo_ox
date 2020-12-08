@@ -1,11 +1,11 @@
 #include <string.h>
 #include <sys/wait.h>
-#include "../src/orb_log.h"
-#include "../src/orb_args.h"
-#include "../src/orb_utils.h"
-#include "../src/orb_utils_str.h"
-#include "../src/orb_build_link.h"
-#include "../src/orb_build_utils.h"
+#include "../orb_utils/orb_log.h"
+#include "../orb_utils/orb_args.h"
+#include "../orb_utils/orb_utils.h"
+#include "../orb_utils/orb_utils_str.h"
+#include "../orb_build/orb_build_link.h"
+#include "../orb_build/orb_build_utils.h"
 
 
 static const char * _shared(json_object * project) {
