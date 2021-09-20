@@ -159,5 +159,6 @@ bool orb_link_project(json_object * project) {
     if (res)
         _ofiles_print(project);
 
+    free(cmd);
     return res;
 }

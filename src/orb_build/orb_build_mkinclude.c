@@ -69,7 +69,8 @@ static void export_depends(const char * hfile,
         const char * dep_file;
         char rpath[B_KB(4)];
 
-        if ( !(inc = strstr(line, "#include" )) ) continue;
+        if ( !(inc = strstr(line, "#include")) )
+            continue;
 
         deph = _dep_hfile_name(inc + strlen("#include"));
         if (!deph) continue;
@@ -83,6 +84,7 @@ static void export_depends(const char * hfile,
     ((void)file);
     ((void)exported);
 
+    free(line);
     fclose(fp);
 }
 
@@ -105,12 +107,14 @@ static void _hfile_exports(const char * hfile,
 
         if (strstr(line, "EXPORT_FROM")) { export = true;  continue; }
         if (strstr(line, "EXPORT_TO"  )) { export = false; continue; }
-        if (strstr(line, "EXPORT "    )) toexport = line + strlen("EXPORT ");
+        if (strstr(line, "EXPORT "    ))
+            toexport = line + strlen("EXPORT ");
 
         if (export)        fprintf(file, "%s", line);
         else if (toexport) fprintf(file, "%s", toexport);
     }
 
+    free(line);
     fclose(fp);
 
     orb_json_bool(exported, hfile, true);
