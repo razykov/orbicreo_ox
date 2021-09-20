@@ -4,11 +4,16 @@
 #include <stddef.h>
 #include <json-c/json.h>
 
-#define ORB_COLOUR_A8_RED    (1)
-#define ORB_COLOUR_A8_YELLOW (3)
-#define ORB_COLOUR_A8_BLUE   (4)
-#define ORB_COLOUR_A8_CYAN   (6)
-#define ORB_COLOUR_A8_WHITE  (7)
+#define ORB_COLOUR_CLEAR  "0"
+#define ORB_COLOUR_RED    "1;31"
+#define ORB_COLOUR_GREEN  "1;32"
+#define ORB_COLOUR_YELLOW "1;33"
+#define ORB_COLOUR_BLUE   "1;34"
+#define ORB_COLOUR_PURPLE "0;35"
+#define ORB_COLOUR_CYAN   "1;36"
+#define ORB_COLOUR_WHITE  "1;37"
+
+#define ORB_COL(color) "\033["color"m"
 
 #define B_KB(VAL) (1024 * (VAL))
 
@@ -35,13 +40,22 @@ enum orb_goal {
     ORB_GOAL_LIST
 };
 
+struct orb_project {
+    char * name;
+};
+
 struct orb_ctx {
     char appname[ORB_APPNAME_SZ];
     char root[ORB_ROOT_SZ];
-    char proj_path[ORB_PATH_SZ];
+    char repo_projects[ORB_PATH_SZ];
 
     char * target_proj;
-    json_object * proj_set;
+    json_object * proj_set_json;
+
+    struct {
+        u32 ncount;
+        struct orb_project * data;
+    } projects;
 
     enum orb_goal goal;
 
@@ -58,6 +72,8 @@ void orb_bts_free(struct orb_bts * bts);
 
 struct orb_ctx * orb_ctx_create(char ** argv);
 void orb_ctx_destroy(struct orb_ctx * ctx);
+
+void orb_cxt_proj_expand(struct orb_ctx * ctx);
 
 void orb_bts_append_u8(struct orb_bts * bts, u8 byte);
 

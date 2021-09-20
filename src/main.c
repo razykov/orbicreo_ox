@@ -25,10 +25,10 @@ static void _help(void) {
 
 static void _exec_goal() {
     switch (context->goal) {
-    case ORB_GOAL_BUILD: orb_goal_build();     break;
-    case ORB_GOAL_INIT : orb_goal_init();      break;
-    case ORB_GOAL_LIST : orb_goal_list(); break;
-    case ORB_GOAL_HELP : _help();         break;
+    case ORB_GOAL_BUILD: orb_goal_build(); break;
+    case ORB_GOAL_INIT : orb_goal_init();  break;
+    case ORB_GOAL_LIST : orb_goal_list();  break;
+    case ORB_GOAL_HELP : _help();          break;
     default:
         orb_err("Fatal error. Unknown goal");
         exit(EXIT_FAILURE);

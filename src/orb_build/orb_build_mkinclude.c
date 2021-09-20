@@ -1,3 +1,4 @@
+#define _DEFAULT_SOURCE
 #define _POSIX_C_SOURCE (200809L)
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +16,7 @@ static void _hfile_exports(const char * hfile,
 
 static json_object * _h_files(json_object * project) {
     json_object * array = orb_json_array(project, "h_files");
-    orb_find_nexp_files(orb_json_get_string(project, "path"), array, ".h");
+    orb_find_nexp_files(orb_json_get_string(project, "project_path"), array, ".h");
     return array;
 }
 
@@ -65,13 +66,18 @@ static void export_depends(const char * hfile,
 
     while ((nread = getline(&line, &len, fp)) != -1) {
         const char * deph;
+        const char * dep_file;
+        char rpath[B_KB(4)];
 
         if ( !(inc = strstr(line, "#include" )) ) continue;
 
         deph = _dep_hfile_name(inc + strlen("#include"));
         if (!deph) continue;
+        dep_file = orb_cat(_dep_hfile_dir(hfile), deph);
+        if (realpath(dep_file, rpath) == NULL)
+            continue;
 
-        _hfile_exports(orb_cat(_dep_hfile_dir(hfile), deph), file, exported);
+        _hfile_exports(rpath, file, exported);
     }
 
     ((void)file);
@@ -183,10 +189,20 @@ static bool _mkinclude(json_object * project) {
 }
 
 bool orb_mkinclude(json_object * project) {
+     bool res = false;
     const char * type = orb_proj_type(project);
+
     if (!strcmp(type, "shared")) {
-        orb_try(orb_mkdir_p(orb_cat(context->root, "includes")));
-        orb_try(_mkinclude(project));
+        u32 root_off = strlen(orb_json_get_string(project, "repo_root")) + sizeof(char);
+
+        orb_inf("Project header file generating");
+
+        if (orb_mkdir_p(orb_cat(context->root, "includes")))
+            if (_mkinclude(project))
+                res = true;
+
+        orb_stat(res ? PPL : RED, NULL,
+                                  "  %s", _include_fname(project) + root_off);
     }
     return true;
 }

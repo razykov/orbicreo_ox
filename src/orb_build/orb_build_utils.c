@@ -81,10 +81,23 @@ void orb_monorepo_libs(char ** cmd, size_t * len) {
     _bin_subdirs(buff, cmd, len);
 }
 
+static void _self_cleaning(json_object * dep_list) {
+    if(dep_list)
+        for(ssize_t i = json_object_array_length(dep_list) - 1; i >= 0; --i) {
+            json_object * dep = json_object_array_get_idx(dep_list, i);
+            const char * dep_str = json_object_get_string(dep);
+            if (!strcmp(dep_str, context->target_proj))
+                json_object_array_del_idx(dep_list, i, 1);
+        }
+}
+
 json_object * orb_dependency_list(json_object * project) {
     project = orb_json_find(project, "recipe");
     project = orb_json_find(project, "general");
     project = orb_json_find(project, "dependency_list");
+
+    _self_cleaning(project);
+
     return project;
 }
 
@@ -106,10 +119,10 @@ static void _receipt_parse(json_object * proj, json_object * recipe) {
                           orb_json_get_string(tmp, "project_name"));
 }
 
-static void _proj_add(const char * dname, json_object * proj_set) {
+static void _proj_add(const char * dname, json_object * proj_set_json) {
     json_object * tmp;
     json_object * json;
-    char * path    = strdup(orb_cat(context->proj_path, dname));
+    char * path    = strdup(orb_cat(context->repo_projects, dname));
     char * recipe  = strdup(orb_cat(path, "recipe.json"));
     char * version = strdup(orb_cat(path, "version.json"));
 
@@ -117,8 +130,9 @@ static void _proj_add(const char * dname, json_object * proj_set) {
     if (!tmp) goto proj_add_fail;
 
     json = orb_json_object(NULL, NULL);
+    orb_json_string(json, "repo_root", context->root);
     orb_json_string(json, "dirname", dname);
-    orb_json_string(json, "path", path);
+    orb_json_string(json, "project_path", path);
 
     _receipt_parse(json, tmp);
 
@@ -126,11 +140,12 @@ static void _proj_add(const char * dname, json_object * proj_set) {
     if (!tmp) tmp = _new_version();
     orb_json_move(json, tmp, "version");
 
-    orb_json_move(proj_set, json, orb_json_get_string(json, "project_name"));
+    orb_json_move(proj_set_json, json, orb_json_get_string(json, "project_name"));
 
 proj_add_fail:
     free(path);
     free(recipe);
+    free(version);
 }
 
 json_object * orb_projects_set(void) {
@@ -138,7 +153,7 @@ json_object * orb_projects_set(void) {
     struct dirent * dir;
     json_object * list = orb_json_object(NULL, NULL);
 
-    d = opendir(context->proj_path);
+    d = opendir(context->repo_projects);
     if (d) {
         while ((dir = readdir(d)) != NULL) {
             if (!orb_is_include_dir(dir)) continue;

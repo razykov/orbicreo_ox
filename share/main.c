@@ -1,5 +1,7 @@
 #include <stdio.h>
 
 int main (int argc, char ** argv) {
-    ptintf("Hello world!\n");
+    (void)(argc);
+    (void)(argv);
+    printf("Hello world!\n");
 }

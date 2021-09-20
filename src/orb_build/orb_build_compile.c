@@ -1,3 +1,4 @@
+#include <string.h>
 #include <sys/wait.h>
 #include "../orb_utils/orb_log.h"
 #include "../orb_utils/orb_utils.h"
@@ -10,7 +11,12 @@ struct cmpl_payload {
     bool res;
 
     json_object * project;
-    const char * cfile;
+    size_t root_offset;
+
+    const char * flags_str;
+
+    const char * cfile_path;
+    const char * cfile_name;
 };
 
 static const char * _compiler(json_object * project) {
@@ -21,10 +27,9 @@ static const char * _compiler(json_object * project) {
     return compiler ? compiler : "cc";
 }
 
-static const char * _obj_path(struct cmpl_payload * pld) {
+static const char * _obj_file(struct cmpl_payload * pld) {
     static __thread char buff[ORB_PATH_SZ];
-    sprintf(buff, "%s/%s.o", orb_json_get_string(pld->project, "objs_path"),
-                             orb_sha2str(orb_file_sha1(pld->cfile)) );
+    sprintf(buff, "%s.o", orb_sha2str(orb_file_sha1(pld->cfile_path)) );
     return buff;
 }
 
@@ -49,24 +54,27 @@ static json_object * _dep_incl(json_object * project) {
     return project ? project : orb_json_array(gen, "dependency_include");
 }
 
-static void _compiler_options(json_object * project, char ** cmd, size_t * len) {
+static char * _compiler_options(json_object * project, char ** flags) {
+    size_t len = 0;
     const char * comp_std;
     json_object * json = _comp_opt(project);
-    if (!json) return;
+    if (!json) return *flags;
 
     for(size_t i = 0; i < json_object_array_length(json); ++i) {
         json_object * elem = json_object_array_get_idx(json, i);
 
-        *cmd = orb_strexp(*cmd, len, "-");
-        *cmd = orb_strexp(*cmd, len, json_object_get_string(elem));
-        *cmd = orb_strexp(*cmd, len, " ");
+        *flags = orb_strexp(*flags, &len, "-");
+        *flags = orb_strexp(*flags, &len, json_object_get_string(elem));
+        *flags = orb_strexp(*flags, &len, " ");
     }
 
     comp_std = _comp_std(project);
     if (comp_std) {
-        *cmd = orb_strexp(*cmd, len, "-std=");
-        *cmd = orb_strexp(*cmd, len, comp_std);
+        *flags = orb_strexp(*flags, &len, "-std=");
+        *flags = orb_strexp(*flags, &len, comp_std);
     }
+
+    return *flags;
 }
 
 static void _dependency_include(json_object * project, char ** cmd, size_t * len) {
@@ -81,62 +89,79 @@ static void _dependency_include(json_object * project, char ** cmd, size_t * len
 
     for(size_t i = 0; i < json_object_array_length(json); ++i) {
         json_object * elem = json_object_array_get_idx(json, i);
+        const char * elem_str = json_object_get_string(elem);
 
-        *cmd = orb_strexp(*cmd, len, " -I");
-        *cmd = orb_strexp(*cmd, len, json_object_get_string(elem));
+        if (strlen(elem_str)) {
+            *cmd = orb_strexp(*cmd, len, " -I");
+            *cmd = orb_strexp(*cmd, len, elem_str);
+        }
     }
 }
 
-static char * _file_compile_command(struct cmpl_payload * pld) {
+static char * _file_compile_command(struct cmpl_payload * pld,
+                                    const char * ofile_path) {
+    char * cmd;
     size_t len = 0;
-    const char * ofile;
-    char * cmd = calloc(1, sizeof(char));
 
+    cmd = calloc(1, sizeof(char));
     if (!cmd) return NULL;
-
-    ofile = _obj_path(pld);
 
     cmd = orb_strexp(cmd, &len, _compiler(pld->project));
     cmd = orb_strexp(cmd, &len, " -c ");
 
-    _compiler_options  (pld->project, &cmd, &len);
+    cmd = orb_strexp(cmd, &len, pld->flags_str);
     _dependency_include(pld->project, &cmd, &len);
     orb_monorepo_libs(&cmd, &len);
     cmd = orb_strexp(cmd, &len, " ");
 
-    cmd = orb_strexp(cmd, &len, pld->cfile);
+    cmd = orb_strexp(cmd, &len, pld->cfile_path);
     cmd = orb_strexp(cmd, &len, " -o ");
-    cmd = orb_strexp(cmd, &len, ofile);
+    cmd = orb_strexp(cmd, &len, ofile_path);
 
-    orb_json_string(orb_json_find(pld->project, "o_files"), NULL, ofile);
-    orb_inf("%s", cmd);
+    orb_json_string(orb_json_find(pld->project, "o_files"), NULL, ofile_path);
 
     return cmd;
 }
 
 static void * _file_compile(void * payload) {
+    char * command;
     struct cmpl_payload * _payload = payload;
-    char * command = _file_compile_command(_payload);
+    const char * ofile_path;
 
+    ofile_path = orb_cat(orb_json_get_string(_payload->project, "objs_path"),
+                         _obj_file(_payload));
+
+    command = _file_compile_command(_payload, ofile_path);
     if (!command) {
         _payload->res = false;
         return _payload;
     }
 
     _payload->res = WEXITSTATUS(system(command)) == 0;
+    if (_payload->res) {
+        const char * ofile = ofile_path + _payload->root_offset;
+        orb_stat(PPL, NULL, "  %s ⟶ %s", _payload->cfile_name, ofile);
+    } else
+        orb_stat(RED, NULL, "  %s ⟶ X",  _payload->cfile_name);
 
     free(command);
     return _payload;
 }
 
-static struct cmpl_payload * _payload(json_object * project, const char * cfile) {
+static struct cmpl_payload * _payload(json_object * project,
+                                      const char * repo_root,
+                                      const char * cfile,
+                                      char * flags) {
     struct cmpl_payload * payload = malloc(sizeof(struct cmpl_payload));
 
     if (!payload) return NULL;
 
     payload->res = false;
     payload->project = project;
-    payload->cfile = cfile;
+    payload->root_offset = strlen(repo_root) + sizeof(char);
+    payload->cfile_path = cfile;
+    payload->cfile_name = cfile + payload->root_offset;
+    payload->flags_str = flags;
 
     return payload;
 }
@@ -152,9 +177,12 @@ static bool _compile_ret_parse(void * ret) {
 }
 
 bool orb_compile_project(json_object * project) {
+    bool res;
+    char * flags;
     orb_thrds_t thrds = orb_thrd_create();
     json_object * comp_opt = _comp_opt(project);
     json_object * c_files = orb_json_find(project, "c_files");
+    const char * repo_root = orb_json_get_string(project, "repo_root");
 
     orb_try(comp_opt);
 
@@ -162,15 +190,25 @@ bool orb_compile_project(json_object * project) {
     orb_json_string(comp_opt, NULL, "fPIC");
     orb_json_string(_dep_incl(project), NULL, "includes");
 
+    flags = calloc(1, sizeof(char));
+    if (!flags) return false;
+    flags = _compiler_options(project, &flags);
+
+    orb_inf("Сompilation");
+    orb_stat(CYN, "Flags", "%s", flags);
+
     for(size_t i = 0; i < json_object_array_length(c_files); ++i) {
         const char * cfile;
         struct cmpl_payload * pld;
 
         cfile = json_object_get_string(json_object_array_get_idx(c_files, i));
-        pld = _payload(project, cfile);
+        pld = _payload(project, repo_root, cfile, flags);
 
         orb_thrds_append(thrds, _file_compile, pld);
     }
 
-    return orb_thrds_join(thrds, _compile_ret_parse);
+    res = orb_thrds_join(thrds, _compile_ret_parse);
+
+    free(flags);
+    return res;
 }

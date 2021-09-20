@@ -53,7 +53,7 @@ static void _get_root(struct orb_ctx * ctx) {
     if(!strlen(ctx->root))
         getcwd(ctx->root, sizeof(ctx->root));
 
-    snprintf(ctx->proj_path, ORB_PATH_SZ, "%s/projects", ctx->root);
+    snprintf(ctx->repo_projects, ORB_PATH_SZ, "%s/projects", ctx->root);
 }
 
 struct orb_ctx * orb_ctx_create(char ** argv) {
@@ -63,7 +63,10 @@ struct orb_ctx * orb_ctx_create(char ** argv) {
 
     ctx->goal = ORB_GOAL_BUILD;
     ctx->target_proj = NULL;
-    ctx->proj_set = NULL;
+    ctx->proj_set_json = NULL;
+
+    ctx->projects.data = malloc(0);
+    ctx->projects.ncount = 0;
 
     _name_read(ctx, argv);
     _get_root(ctx);
@@ -71,12 +74,30 @@ struct orb_ctx * orb_ctx_create(char ** argv) {
     return ctx;
 }
 
+static void _proj_free(struct orb_project * proj) {
+    if (proj->name) free(proj->name);
+}
+
 void orb_ctx_destroy(struct orb_ctx * ctx) {
     if (ctx) {
         if (ctx->target_proj)
             free(ctx->target_proj);
-        if (ctx->proj_set)
-            json_object_put(ctx->proj_set);
+        if (ctx->proj_set_json)
+            json_object_put(ctx->proj_set_json);
+
+        if (ctx->projects.data) {
+            for(u32 i = 0; i < ctx->projects.ncount; ++i)
+                _proj_free(&ctx->projects.data[i]);
+
+            free(ctx->projects.data);
+            ctx->projects.ncount = 0;
+        }
+
         free(ctx);
     }
+}
+
+void orb_cxt_proj_expand(struct orb_ctx * ctx) {
+    u32 size = ++ctx->projects.ncount * sizeof(struct orb_project);
+    ctx->projects.data = realloc(ctx->projects.data, size);
 }
