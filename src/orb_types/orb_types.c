@@ -68,6 +68,8 @@ struct orb_ctx * orb_ctx_create(char ** argv) {
     ctx->projects.data = malloc(0);
     ctx->projects.ncount = 0;
 
+    ctx->njobs = 1;
+
     _name_read(ctx, argv);
     _get_root(ctx);
 

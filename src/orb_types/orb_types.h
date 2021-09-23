@@ -60,6 +60,8 @@ struct orb_ctx {
     enum orb_goal goal;
 
     bool verbose;
+
+    u8 njobs;
 };
 
 struct orb_bts {

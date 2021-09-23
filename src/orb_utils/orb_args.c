@@ -12,6 +12,7 @@ struct orb_ctx * context;
 
 bool orb_args_parse(i32 argc, char ** argv) {
     i32 c;
+    i32 iarg;
 
     if (!(context = orb_ctx_create(argv)))
         return false;
@@ -19,15 +20,16 @@ bool orb_args_parse(i32 argc, char ** argv) {
     while (true) {
         i32 option_index = 0;
         static struct option long_options[] = {
-            { "help",    no_argument,       0, 'h' },
-            { "init",    no_argument,       0, 'i' },
-            { "build",   no_argument,       0, 'b' },
-            { "list",    no_argument,       0, 'l' },
-            { "project", optional_argument, 0, 'p' },
-            { 0, 0, 0, 0 }
+            { "help",    no_argument,       NULL, 'h' },
+            { "init",    no_argument,       NULL, 'i' },
+            { "build",   no_argument,       NULL, 'b' },
+            { "list",    no_argument,       NULL, 'l' },
+            { "project", optional_argument, NULL, 'p' },
+            { "jobs",    optional_argument, NULL, 'j' },
+            { 0, 0, NULL, 0 }
         };
 
-        c = getopt_long(argc, argv, "bhilp:", long_options, &option_index);
+        c = getopt_long(argc, argv, "bhilp:j:", long_options, &option_index);
         if (c == -1) break;
 
         switch (c) {
@@ -53,6 +55,11 @@ bool orb_args_parse(i32 argc, char ** argv) {
 
         case 'p':
             context->target_proj = strdup(optarg);
+            break;
+
+        case 'j':
+            iarg = atoi(optarg);
+            context->njobs = iarg < 1 ? 1 : iarg > 255 ? 255 : iarg;
             break;
 
         case '?':
