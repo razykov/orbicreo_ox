@@ -8,11 +8,13 @@
 #include "../orb_build/orb_build_utils.h"
 
 
-static const char * _shared(json_object * project) {
+inline static const char * _shared(json_object * project)
+{
     return strcmp(orb_proj_type(project), "shared") ? " " : " -shared";
 }
 
-static const char * _linker(json_object * project) {
+static const char * _linker(json_object * project)
+{
     const char * linker;
     project = orb_json_find(project, "recipe");
     project = orb_json_find(project, "general");
@@ -20,7 +22,8 @@ static const char * _linker(json_object * project) {
     return linker ? linker : "cc";
 }
 
-static const char * _directory_dest(json_object * project) {
+static const char * _directory_dest(json_object * project)
+{
     const char * dist;
     project = orb_json_find(project, "recipe");
     project = orb_json_find(project, "general");
@@ -28,7 +31,8 @@ static const char * _directory_dest(json_object * project) {
     return dist ? dist : "";
 }
 
-static const char * _dest(json_object * project) {
+static const char * _dest(json_object * project)
+{
     static __thread char buff[ORB_PATH_SZ];
 
     sprintf(buff, "%s/bin/%s", context->root, _directory_dest(project));
@@ -38,7 +42,8 @@ static const char * _dest(json_object * project) {
     return buff;
 }
 
-static const char * _output_file_path(json_object * project) {
+static const char * _output_file_path(json_object * project)
+{
     static __thread char buff[ORB_ROOT_SZ];
     const char * type = orb_proj_type(project);
     const char * name = orb_json_get_string(project, "project_name");
@@ -51,13 +56,15 @@ static const char * _output_file_path(json_object * project) {
     return buff;
 }
 
-static char * _output_file(json_object * project, char * cmd, size_t * len) {
+static char * _output_file(json_object * project, char * cmd, size_t * len)
+{
     cmd = orb_strexp(cmd, len, " -o ");
     cmd = orb_strexp(cmd, len, _output_file_path(project));
     return cmd;
 }
 
-static char * _ofiles(json_object * project, char * cmd, size_t * len) {
+static char * _ofiles(json_object * project, char * cmd, size_t * len)
+{
     json_object * ofiles = orb_json_find(project, "o_files");
 
     for(size_t i = 0; i < json_object_array_length(ofiles); ++i) {
@@ -70,7 +77,8 @@ static char * _ofiles(json_object * project, char * cmd, size_t * len) {
     return cmd;
 }
 
-static char * _liblinks(json_object * project, char * cmd, size_t * len) {
+static char * _liblinks(json_object * project, char * cmd, size_t * len)
+{
     json_object * dep_list = orb_dependency_list(project);
 
     if(dep_list)
@@ -84,7 +92,8 @@ static char * _liblinks(json_object * project, char * cmd, size_t * len) {
     return cmd;
 }
 
-static const char * _liblist(json_object * project) {
+static const char * _liblist(json_object * project)
+{
     static __thread char list[B_KB(4)];
     u32 off = 0;
     json_object * dep_list = orb_dependency_list(project);
@@ -111,14 +120,16 @@ static const char * _liblist(json_object * project) {
     return list;
 }
 
-static size_t utf8_strlen(const char *s) {
+static size_t utf8_strlen(const char *s)
+{
     size_t count = 0;
     while (*s)
         count += (*s++ & 0xC0) != 0x80;
     return count;
 }
 
-static void _ofiles_print(json_object * project) {
+static void _ofiles_print(json_object * project)
+{
     bool first = true;
     json_object * ofiles = orb_json_find(project, "o_files");
     u32 root_off = strlen(orb_json_get_string(project, "repo_root")) + sizeof(char);
@@ -138,7 +149,8 @@ static void _ofiles_print(json_object * project) {
     orb_stat(PPL, NULL, "     └─%*s─┘", ofp_len);
 }
 
-bool orb_link_project(json_object * project) {
+bool orb_link_project(json_object * project)
+{
     bool res;
     size_t len = 0;
     char * cmd = calloc(1, sizeof(char));

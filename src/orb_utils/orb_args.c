@@ -10,7 +10,8 @@
 
 struct orb_ctx * context;
 
-bool orb_args_parse(i32 argc, char ** argv) {
+bool orb_args_parse(i32 argc, char ** argv)
+{
     i32 c;
     i32 iarg;
 

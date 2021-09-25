@@ -8,7 +8,8 @@
 #define SHARE_DIR "/usr/share/orbicreo/"
 #define EMPTY_PRJ "projects/empty_app/"
 
-bool orb_goal_init(void) {
+bool orb_goal_init(void)
+{
     const char * root = context->root;
 
     orb_inf("orbicreo init");

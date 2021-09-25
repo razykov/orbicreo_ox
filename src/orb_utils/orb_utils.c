@@ -15,7 +15,8 @@
 #define DIR_OTRM (S_IRWXO)
 #define DIR_MODE (DIR_USRM | DIR_GRPM | DIR_OTRM)
 
-bool orb_dir_exist(const char * path) {
+bool orb_dir_exist(const char * path)
+{
     struct stat sb;
     if ( stat(path, &sb) == 0 ) {
         if (S_ISDIR (sb.st_mode))
@@ -24,7 +25,8 @@ bool orb_dir_exist(const char * path) {
     return false;
 }
 
-static inline bool _file_exist(const char * path) {
+static inline bool _file_exist(const char * path)
+{
     struct stat sb;
     if (access(path, F_OK) != -1) {
         if ( stat(path, &sb) == 0 ) {
@@ -35,7 +37,8 @@ static inline bool _file_exist(const char * path) {
     return false;
 }
 
-static char * _next_dir(char ** dir) {
+static char * _next_dir(char ** dir)
+{
     char c;
     u32 w = 0;
     static __thread char buff[B_KB(1)];
@@ -56,7 +59,8 @@ static char * _next_dir(char ** dir) {
     return buff;
 }
 
-bool orb_mkdir_p(const char * dir) {
+bool orb_mkdir_p(const char * dir)
+{
     char * ptr = (char *)dir;
     char path[PATH_MAX_STRING_SIZE] = { 0 };
 
@@ -73,13 +77,15 @@ bool orb_mkdir_p(const char * dir) {
     return true;
 }
 
-const char * orb_cat(const char * root, const char * file) {
+const char * orb_cat(const char * root, const char * file)
+{
     static __thread char path[B_KB(4)];
     snprintf(path, B_KB(4), "%s/%s", root, file);
     return path;
 }
 
-const char * orb_get_dir(const char * path) {
+const char * orb_get_dir(const char * path)
+{
     char c;
     char * ptr = (char*)path;
     char * lastsh = ptr;
@@ -99,17 +105,20 @@ const char * orb_get_dir(const char * path) {
     return buff;
 }
 
-static bool _create_dir_for_file(const char * path) {
+static bool _create_dir_for_file(const char * path)
+{
     const char * dir = orb_get_dir(path);
     return orb_mkdir_p(dir);
 }
 
-inline static void _try_close(i32 fd, const char * path) {
+inline static void _try_close(i32 fd, const char * path)
+{
     if (close(fd) == -1)
         orb_err("error while close file %s", path);
 }
 
-bool orb_copy(const char * from, const char * to) {
+bool orb_copy(const char * from, const char * to)
+{
     i32 from_fd;
     i32 to_fd;
     bool res = true;
@@ -157,7 +166,8 @@ bool orb_copy(const char * from, const char * to) {
     return res;
 }
 
-u8 * orb_file_sha1(const char * path) {
+u8 * orb_file_sha1(const char * path)
+{
     i32 fd;
     ssize_t nread;
     SHA_CTX ctx;
@@ -198,12 +208,14 @@ u8 * orb_file_sha1(const char * path) {
     return sha;
 }
 
-static void _write_half_byte(u8 half_byte, char * dst) {
+static void _write_half_byte(u8 half_byte, char * dst)
+{
     if (half_byte < 0x0a) *dst = '0' + half_byte;
     else *dst = 'a' + half_byte - 0x0a;
 }
 
-static void _write_byte(u8 byte, char ** dst) {
+static void _write_byte(u8 byte, char ** dst)
+{
     u8 half_byte;
 
     half_byte = (byte >> 4) & 0x0F;
@@ -212,7 +224,8 @@ static void _write_byte(u8 byte, char ** dst) {
     _write_half_byte(half_byte, (*dst)++);
 }
 
-const char * orb_sha2str(u8 * sha1) {
+const char * orb_sha2str(u8 * sha1)
+{
     static __thread char buff[2 * SHA_DIGEST_LENGTH + 1];
     char * wptr = buff;
 
@@ -226,7 +239,8 @@ const char * orb_sha2str(u8 * sha1) {
     return buff;
 }
 
-static size_t _file_size(FILE * file) {
+static size_t _file_size(FILE * file)
+{
     size_t size;
     fseek(file, 0, SEEK_END);
     size = ftell(file);
@@ -234,7 +248,8 @@ static size_t _file_size(FILE * file) {
     return size;
 }
 
-struct orb_bts * orb_file_read(const char * path) {
+struct orb_bts * orb_file_read(const char * path)
+{
     size_t nread;
     FILE * file = NULL;
     struct orb_bts * bts;

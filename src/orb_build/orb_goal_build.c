@@ -14,7 +14,8 @@
 
 static bool _build_project(json_object * project);
 
-static bool _init_dirs(void) {
+static bool _init_dirs(void)
+{
     if (!orb_mkdir_p(orb_cat(context->root, "build/obj")))
         return false;
     if (!orb_mkdir_p(orb_cat(context->root, "bin")))
@@ -22,13 +23,15 @@ static bool _init_dirs(void) {
     return true;
 }
 
-static json_object * _src_files(const char * proj_path) {
+static json_object * _src_files(const char * proj_path)
+{
     json_object * array = orb_json_array(NULL, NULL);
     orb_find_nexp_files(proj_path, array, ".c");
     return array;
 }
 
-static bool _mkobjdir(json_object * project) {
+static bool _mkobjdir(json_object * project)
+{
     char objdir[ORB_PATH_SZ] = { 0 };
     sprintf(objdir, "%s/build/obj/%s", context->root,
                                        orb_json_get_string(project, "dirname"));
@@ -38,7 +41,8 @@ static bool _mkobjdir(json_object * project) {
     return true;
 }
 
-static bool _build_depends(json_object * project) {
+static bool _build_depends(json_object * project)
+{
     json_object * dep_list = orb_dependency_list(project);
 
     if(dep_list)
@@ -56,7 +60,8 @@ static bool _build_depends(json_object * project) {
     return true;
 }
 
-static bool _build_project(json_object * project) {
+static bool _build_project(json_object * project)
+{
     bool ret = json_object_get_boolean(orb_json_find(project, "built"));
     if (ret)
         return true;
@@ -84,13 +89,15 @@ static bool _build_project(json_object * project) {
     return true;
 }
 
-static void _rm_build(void) {
+static void _rm_build(void)
+{
     char buff[B_KB(5)];
     sprintf(buff, "rm -rf %s/build", context->root);
     system(buff);
 }
 
-bool orb_goal_build(void) {
+bool orb_goal_build(void)
+{
     _rm_build();
     if (!_init_dirs())
         return false;

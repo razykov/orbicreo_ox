@@ -1,5 +1,3 @@
-//#define _DEFAULT_SOURCE
-
 #include <stdlib.h>
 #include "orb_utils/orb_log.h"
 #include "orb_utils/orb_args.h"
@@ -11,7 +9,8 @@
 #include "orb_job_agent/orb_job_agent.h"
 
 
-static void _help(void) {
+static void _help(void)
+{
     orb_txt("Using: %s [opt]... ", context->appname);
     orb_txt("");
     orb_txt("Options:");
@@ -27,7 +26,8 @@ static void _help(void) {
     exit(EXIT_SUCCESS);
 }
 
-static void _exec_goal() {
+static void _exec_goal()
+{
     switch (context->goal) {
     case ORB_GOAL_BUILD: orb_goal_build(); break;
     case ORB_GOAL_INIT : orb_goal_init();  break;
@@ -39,10 +39,8 @@ static void _exec_goal() {
     }
 }
 
-//#include <unistd.h>
-//#include <string.h>
-
-i32 main (i32 argc, char ** argv) {
+i32 main (i32 argc, char ** argv)
+{
     if (!orb_args_parse(argc, argv))
         return EXIT_FAILURE;
 
@@ -51,21 +49,6 @@ i32 main (i32 argc, char ** argv) {
 
     orb_agent_stop();
     orb_ctx_destroy(context);
-
-/*
-    orb_agents_start(2);
-
-    orb_agent_task_append(strdup("123"));
-    orb_agent_task_append(strdup("124"));
-    orb_agent_task_append(strdup("125"));
-    orb_agent_task_append(strdup("126"));
-
-    orb_agent_wait();
-
-    orb_agent_stop();
-
-    (void)_exec_goal;
-*/
 
     (void)argc;
     (void)argv;

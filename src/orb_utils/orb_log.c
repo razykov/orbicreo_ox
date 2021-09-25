@@ -9,12 +9,14 @@
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
-inline static void _paint(FILE * file, const char * colour) {
+inline static void _paint(FILE * file, const char * colour)
+{
     fprintf(file, COL_SET, colour);
 }
 
 void _cprint(FILE * stream, const char * colour, u8 flags,
-             const char * func, const char * fmt, ...) {
+             const char * func, const char * fmt, ...)
+{
     va_list args;
 
     pthread_mutex_lock(&mutex);
@@ -40,7 +42,8 @@ void _cprint(FILE * stream, const char * colour, u8 flags,
 }
 
 void _stprint(FILE * stream, const char * colour,
-              const char * name, const char * fmt, ...) {
+              const char * name, const char * fmt, ...)
+{
     va_list args;
 
     pthread_mutex_lock(&mutex);

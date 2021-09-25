@@ -6,7 +6,8 @@
 #define IS_BIG_LETTER(LETTER)   (('A' <= LETTER) && (LETTER <= 'Z'))
 #define IS_DIGIT(LETTER)        (('0' <= LETTER) && (LETTER <= '9'))
 
-char * orb_strexp(char * str, size_t * len, const char * tail) {
+char * orb_strexp(char * str, size_t * len, const char * tail)
+{
     size_t tsize;
 
     if (!str || !len || !tail) return NULL;
@@ -23,7 +24,8 @@ char * orb_strexp(char * str, size_t * len, const char * tail) {
     return str;
 }
 
-void orb_upstr(char * str) {
+void orb_upstr(char * str)
+{
     if (!str) return;
 
     while(*str) {

@@ -8,13 +8,15 @@
 #include "../orb_utils/orb_utils.h"
 #include "../orb_utils/orb_utils_str.h"
 
-const char * orb_proj_type(json_object * project) {
+const char * orb_proj_type(json_object * project)
+{
     project = orb_json_find(project, "recipe");
     project = orb_json_find(project, "general");
     return orb_json_get_string(project, "project_type");
 }
 
-static const char * _last_dot(const char * fname) {
+static const char * _last_dot(const char * fname)
+{
     const char * ptr = NULL;
     while (*fname) {
         if (*fname == '.') ptr = fname;
@@ -23,7 +25,8 @@ static const char * _last_dot(const char * fname) {
     return ptr;
 }
 
-static bool _is_nexp(struct dirent * dir, const char * nexp) {
+static bool _is_nexp(struct dirent * dir, const char * nexp)
+{
     const char * last_dot;
 
     if (dir->d_type != DT_REG) return false;
@@ -35,7 +38,8 @@ static bool _is_nexp(struct dirent * dir, const char * nexp) {
 }
 
 void orb_find_nexp_files(const char * dirpath,
-                         json_object * array, const char * nexp) {
+                         json_object * array, const char * nexp)
+{
     DIR * d = opendir(dirpath);
     char buff[ORB_PATH_SZ];
     if (d) {
@@ -49,14 +53,16 @@ void orb_find_nexp_files(const char * dirpath,
     }
 }
 
-bool orb_is_include_dir(struct dirent * dir) {
+bool orb_is_include_dir(struct dirent * dir)
+{
     if (!dir || dir->d_type != DT_DIR) return false;
     if (!strcmp(dir->d_name, "." ))    return false;
     if (!strcmp(dir->d_name, ".."))    return false;
     return true;
 }
 
-static void _bin_subdirs(const char * dirpath, char ** cmd, size_t * len) {
+static void _bin_subdirs(const char * dirpath, char ** cmd, size_t * len)
+{
     DIR * d;
     d = opendir(dirpath);
     char buff[ORB_PATH_SZ];
@@ -75,13 +81,15 @@ static void _bin_subdirs(const char * dirpath, char ** cmd, size_t * len) {
     }
 }
 
-void orb_monorepo_libs(char ** cmd, size_t * len) {
+void orb_monorepo_libs(char ** cmd, size_t * len)
+{
     char buff[ORB_PATH_SZ];
     sprintf(buff, "%s/bin", context->root);
     _bin_subdirs(buff, cmd, len);
 }
 
-static void _self_cleaning(json_object * dep_list) {
+static void _self_cleaning(json_object * dep_list)
+{
     if(dep_list)
         for(ssize_t i = json_object_array_length(dep_list) - 1; i >= 0; --i) {
             json_object * dep = json_object_array_get_idx(dep_list, i);
@@ -91,7 +99,8 @@ static void _self_cleaning(json_object * dep_list) {
         }
 }
 
-json_object * orb_dependency_list(json_object * project) {
+json_object * orb_dependency_list(json_object * project)
+{
     project = orb_json_find(project, "recipe");
     project = orb_json_find(project, "general");
     project = orb_json_find(project, "dependency_list");
@@ -101,7 +110,8 @@ json_object * orb_dependency_list(json_object * project) {
     return project;
 }
 
-static json_object * _new_version(void) {
+static json_object * _new_version(void)
+{
     json_object * json = orb_json_object(NULL, NULL);
     orb_json_i32(json, "major", 0);
     orb_json_i32(json, "minor", 0);
@@ -109,7 +119,8 @@ static json_object * _new_version(void) {
     return json;
 }
 
-static void _receipt_parse(json_object * proj, json_object * recipe) {
+static void _receipt_parse(json_object * proj, json_object * recipe)
+{
     json_object * tmp;
 
     orb_json_move(proj, recipe, "recipe");
@@ -119,7 +130,8 @@ static void _receipt_parse(json_object * proj, json_object * recipe) {
                           orb_json_get_string(tmp, "project_name"));
 }
 
-static void _proj_add(const char * dname, json_object * proj_set_json) {
+static void _proj_add(const char * dname, json_object * proj_set_json)
+{
     json_object * tmp;
     json_object * json;
     char * path    = strdup(orb_cat(context->repo_projects, dname));
@@ -148,7 +160,8 @@ proj_add_fail:
     free(version);
 }
 
-json_object * orb_projects_set(void) {
+json_object * orb_projects_set(void)
+{
     DIR * d;
     struct dirent * dir;
     json_object * list = orb_json_object(NULL, NULL);
