@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <string.h>
 #include <sys/wait.h>
 #include "../orb_utils/orb_log.h"
@@ -11,7 +12,7 @@ struct cmpl_payload {
     json_object * project;
     size_t root_offset;
 
-    const char * flags_str;
+    const char * compile_fmt;
 
     const char * cfile_path;
     const char * cfile_name;
@@ -112,8 +113,7 @@ static void _dependency_include(json_object * project,
     }
 }
 
-static char * _file_compile_command(struct cmpl_payload * pld,
-                                    const char * ofile_path)
+static char * _file_compile_cmd_fmt(json_object * project, const char * flags)
 {
     char * cmd;
     size_t len = 0;
@@ -121,19 +121,17 @@ static char * _file_compile_command(struct cmpl_payload * pld,
     cmd = calloc(1, sizeof(char));
     if (!cmd) return NULL;
 
-    cmd = orb_strexp(cmd, &len, _compiler(pld->project));
+    cmd = orb_strexp(cmd, &len, _compiler(project));
     cmd = orb_strexp(cmd, &len, " -c ");
 
-    cmd = orb_strexp(cmd, &len, pld->flags_str);
-    _dependency_include(pld->project, &cmd, &len);
+    cmd = orb_strexp(cmd, &len, flags);
+    _dependency_include(project, &cmd, &len);
     orb_monorepo_libs(&cmd, &len);
     cmd = orb_strexp(cmd, &len, " ");
 
-    cmd = orb_strexp(cmd, &len, pld->cfile_path);
+    cmd = orb_strexp(cmd, &len, "%s");
     cmd = orb_strexp(cmd, &len, " -o ");
-    cmd = orb_strexp(cmd, &len, ofile_path);
-
-    orb_json_string(orb_json_find(pld->project, "o_files"), NULL, ofile_path);
+    cmd = orb_strexp(cmd, &len, "%s");
 
     return cmd;
 }
@@ -141,7 +139,7 @@ static char * _file_compile_command(struct cmpl_payload * pld,
 static i32 _file_compile(void * payload)
 {
     i32 res;
-    char * command;
+    char * command = NULL;
     struct cmpl_payload * _payload = payload;
     const char * ofile_path;
 
@@ -151,13 +149,16 @@ static i32 _file_compile(void * payload)
     ofile_path = orb_cat(orb_json_get_string(_payload->project, "objs_path"),
                          _obj_file(_payload));
 
-    command = _file_compile_command(_payload, ofile_path);
-    if (!command)
-        return -1;
+    asprintf(&command, _payload->compile_fmt, _payload->cfile_path, ofile_path);
+    if (!command) {
+        orb_err("compilation command asprintf error");
+        free(payload);
+    }
 
     res = WEXITSTATUS(system(command));
     if (res == 0) {
         const char * ofile = ofile_path + _payload->root_offset;
+        orb_json_string(orb_json_find(_payload->project, "o_files"), NULL, ofile_path);
         orb_stat(PPL, NULL, "  %s ⟶ %s", _payload->cfile_name, ofile);
     } else
         orb_stat(RED, NULL, "  %s ⟶ X",  _payload->cfile_name);
@@ -170,7 +171,7 @@ static i32 _file_compile(void * payload)
 static struct cmpl_payload * _payload(json_object * project,
                                       const char * repo_root,
                                       const char * cfile,
-                                      char * flags)
+                                      const char * cmd_fmt)
 {
     struct cmpl_payload * payload = malloc(sizeof(struct cmpl_payload));
 
@@ -180,7 +181,7 @@ static struct cmpl_payload * _payload(json_object * project,
     payload->root_offset = strlen(repo_root) + sizeof(char);
     payload->cfile_path = cfile;
     payload->cfile_name = cfile + payload->root_offset;
-    payload->flags_str = flags;
+    payload->compile_fmt = cmd_fmt;
 
     return payload;
 }
@@ -189,6 +190,7 @@ bool orb_compile_project(json_object * project)
 {
     bool res;
     char * flags;
+    char * cmd_fmt;
     json_object * comp_opt = _comp_opt(project);
     json_object * c_files = orb_json_find(project, "c_files");
     const char * repo_root = orb_json_get_string(project, "repo_root");
@@ -200,6 +202,7 @@ bool orb_compile_project(json_object * project)
     orb_json_string(_dep_incl(project), NULL, "includes");
 
     flags = _compiler_options(project);
+    cmd_fmt = _file_compile_cmd_fmt(project, flags);
 
     orb_inf("Сompilation");
     orb_stat(CYN, "Flags", "%s", flags);
@@ -209,13 +212,14 @@ bool orb_compile_project(json_object * project)
         struct cmpl_payload * pld;
 
         cfile = json_object_get_string(json_object_array_get_idx(c_files, i));
-        pld = _payload(project, repo_root, cfile, flags);
+        pld = _payload(project, repo_root, cfile, cmd_fmt);
 
         orb_agent_task_append(_file_compile, pld);
     }
 
     res = orb_agent_wait();
 
+    free(cmd_fmt);
     free(flags);
     return res;
 }
