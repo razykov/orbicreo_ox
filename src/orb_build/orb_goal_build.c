@@ -2,13 +2,14 @@
 #include <dirent.h>
 #include <string.h>
 #include <json-c/json.h>
+#include "orb_goal_build.h"
+#include "orb_build_link.h"
+#include "orb_build_utils.h"
+#include "orb_build_compile.h"
 #include "../orb_utils/orb_log.h"
 #include "../orb_utils/orb_args.h"
 #include "../orb_utils/orb_utils.h"
-#include "../orb_build/orb_goal_build.h"
-#include "../orb_build/orb_build_link.h"
-#include "../orb_build/orb_build_utils.h"
-#include "../orb_build/orb_build_compile.h"
+#include "../orb_job_agent/orb_job_agent.h"
 #include "../orb_build/orb_build_mkinclude.h"
 
 
@@ -177,9 +178,6 @@ static bool _build_project(json_object * project)
 
     orb_json_bool(project, "built", true);
 
-//    orb_txt("%s\n", json_object_to_json_string_ext(project,
-//            JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_PRETTY));
-
     return true;
 }
 
@@ -189,6 +187,8 @@ bool orb_goal_build(void)
         return false;
 
     context->proj_set_json = orb_projects_set();
+
+    orb_agents_start(context->njobs);
 
     if (context->target_proj) {
         json_object * project;
@@ -200,6 +200,8 @@ bool orb_goal_build(void)
         orb_usrerr("Use flag -p for give the name of the project. "
                    "Use flag -l to show list of projects");
     }
+
+    orb_agent_stop();
 
     return true;
 }

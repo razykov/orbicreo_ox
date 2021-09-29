@@ -5,8 +5,6 @@
 #include "orb_init/orb_goal_init.h"
 #include "orb_list/orb_goal_list.h"
 #include "orb_build/orb_goal_build.h"
-#include "orb_build/orb_build_utils.h"
-#include "orb_job_agent/orb_job_agent.h"
 
 
 static void _help(void)
@@ -47,10 +45,8 @@ i32 main (i32 argc, char ** argv)
     if (!orb_args_parse(argc, argv))
         return EXIT_FAILURE;
 
-    orb_agents_start(context->njobs);
     _exec_goal();
 
-    orb_agent_stop();
     orb_ctx_destroy(context);
 
     (void)argc;
