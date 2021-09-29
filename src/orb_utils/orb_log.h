@@ -38,7 +38,7 @@
 #define orb_txt(fmt, ...) _cprint(stdout, ORB_COLOUR_WHITE, FLAG_NONE, \
                                   "", fmt, ##__VA_ARGS__)
 
-#define orb_ret(count) printf("%*s", count, "\n");
+#define orb_ret() printf("\n");
 
 /*!
  * \brief Basic print function

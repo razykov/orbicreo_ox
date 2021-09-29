@@ -42,24 +42,10 @@ static const char * _dest(json_object * project)
     return buff;
 }
 
-static const char * _output_file_path(json_object * project)
-{
-    static __thread char buff[ORB_ROOT_SZ];
-    const char * type = orb_proj_type(project);
-    const char * name = orb_json_get_string(project, "project_name");
-
-    if (!strcmp(type, "shared"))
-        sprintf(buff, "%slib%s.so", _dest(project), name);
-    else
-        sprintf(buff, "%s%s", _dest(project), name);
-
-    return buff;
-}
-
 static char * _output_file(json_object * project, char * cmd, size_t * len)
 {
     cmd = orb_strexp(cmd, len, " -o ");
-    cmd = orb_strexp(cmd, len, _output_file_path(project));
+    cmd = orb_strexp(cmd, len, orb_json_get_string(project, "output_file"));
     return cmd;
 }
 
@@ -131,10 +117,14 @@ static size_t utf8_strlen(const char *s)
 static void _ofiles_print(json_object * project)
 {
     bool first = true;
+    u32 root_off;
+    size_t ofp_len;
+    const char * output_file_path;
     json_object * ofiles = orb_json_find(project, "o_files");
-    u32 root_off = strlen(orb_json_get_string(project, "repo_root")) + sizeof(char);
-    const char * output_file_path = _output_file_path(project) + root_off;
-    size_t ofp_len = utf8_strlen(output_file_path);
+
+    root_off = strlen(orb_json_get_string(project, "repo_root")) + sizeof(char);
+    output_file_path = orb_json_get_string(project, "output_file") +  root_off;
+    ofp_len = utf8_strlen(output_file_path);
 
     for(size_t i = 0; i < json_object_array_length(ofiles); ++i) {
         json_object * ofile = json_object_array_get_idx(ofiles, i);
@@ -152,12 +142,24 @@ static void _ofiles_print(json_object * project)
 bool orb_link_project(json_object * project)
 {
     bool res;
+    char * cmd;
+    u32 root_off;
     size_t len = 0;
-    char * cmd = calloc(1, sizeof(char));
+    const char * output_file_path;
+
+    root_off = strlen(orb_json_get_string(project, "repo_root")) + sizeof(char);
+    output_file_path = orb_json_get_string(project, "output_file") +  root_off;
 
     orb_inf("Linking");
     orb_stat(CYN, "Linkable libraries", "%s", _liblist(project));
 
+    res = json_object_get_boolean(orb_json_find(project, "compile_turn"));
+    if (!res) {
+        orb_stat(PPL, NULL, "  %s already exist", output_file_path);
+        return true;
+    }
+
+    cmd = calloc(1, sizeof(char));
     cmd = orb_strexp(cmd, &len, _linker(project));
     cmd = orb_strexp(cmd, &len, _shared(project));
     orb_monorepo_libs(&cmd, &len);
@@ -167,7 +169,6 @@ bool orb_link_project(json_object * project)
 
     orb_mkdir_p(_dest(project));
     res = WEXITSTATUS(system(cmd)) == 0;
-
     if (res)
         _ofiles_print(project);
 

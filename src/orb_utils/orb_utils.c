@@ -1,3 +1,5 @@
+#define _XOPEN_SOURCE 500
+#include <ftw.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
@@ -25,7 +27,7 @@ bool orb_dir_exist(const char * path)
     return false;
 }
 
-static inline bool _file_exist(const char * path)
+bool orb_file_exist(const char * path)
 {
     struct stat sb;
     if (access(path, F_OK) != -1) {
@@ -35,6 +37,24 @@ static inline bool _file_exist(const char * path)
         } return false;
     }
     return false;
+}
+
+i32 unlink_cb(const char * fpath,
+              const struct stat * sb, i32 typeflag, struct FTW * ftwbuf)
+{
+    i32 r = remove(fpath);
+    if (r)
+        perror(fpath);
+
+    (void)sb;
+    (void)typeflag;
+    (void)ftwbuf;
+    return r;
+}
+
+bool orb_rmrf(const char * path)
+{
+    return nftw(path, unlink_cb, 64, FTW_DEPTH | FTW_PHYS) == 0;
 }
 
 static char * _next_dir(char ** dir)
@@ -128,7 +148,7 @@ bool orb_copy(const char * from, const char * to)
     if (!from || !to)
         return false;
 
-    if(!_file_exist(from)) {
+    if(!orb_file_exist(from)) {
         orb_wrn("file %s not exist", from);
         return false;
     }
@@ -166,7 +186,7 @@ bool orb_copy(const char * from, const char * to)
     return res;
 }
 
-u8 * orb_file_sha1(const char * path)
+orb_sha1 orb_file_sha1(const char * path)
 {
     i32 fd;
     ssize_t nread;
@@ -174,9 +194,10 @@ u8 * orb_file_sha1(const char * path)
     static __thread u8 sha[SHA_DIGEST_LENGTH];
     u8 buff[B_KB(4)];
 
-    if(!path || !_file_exist(path)) {
+    if(!path || !orb_file_exist(path)) {
         orb_wrn("file %s not exist", path);
-        return NULL;
+        memset(sha, 0, SHA_DIGEST_LENGTH);
+        return sha;
     }
 
     fd = open(path, O_RDONLY);
@@ -224,7 +245,7 @@ static void _write_byte(u8 byte, char ** dst)
     _write_half_byte(half_byte, (*dst)++);
 }
 
-const char * orb_sha2str(u8 * sha1)
+const char * orb_sha2str(orb_sha1 sha1)
 {
     static __thread char buff[2 * SHA_DIGEST_LENGTH + 1];
     char * wptr = buff;

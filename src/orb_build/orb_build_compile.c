@@ -10,12 +10,12 @@
 
 struct cmpl_payload {
     json_object * project;
+    json_object * o_files;
+
     size_t root_offset;
 
     const char * compile_fmt;
-
     const char * cfile_path;
-    const char * cfile_name;
 };
 
 static const char * _compiler(json_object * project)
@@ -127,48 +127,57 @@ static char * _file_compile_cmd_fmt(json_object * project, const char * flags)
     cmd = orb_strexp(cmd, &len, flags);
     _dependency_include(project, &cmd, &len);
     orb_monorepo_libs(&cmd, &len);
-    cmd = orb_strexp(cmd, &len, " ");
 
-    cmd = orb_strexp(cmd, &len, "%s");
-    cmd = orb_strexp(cmd, &len, " -o ");
-    cmd = orb_strexp(cmd, &len, "%s");
+    cmd = orb_strexp(cmd, &len, " %s -o %s");
 
     return cmd;
 }
 
 static i32 _file_compile(void * payload)
 {
-    i32 res;
-    char * command = NULL;
+    i32 res = 0;
     struct cmpl_payload * _payload = payload;
     const char * ofile_path;
+    const char * ofile;
 
     if (!_payload)
         return -1;
 
     ofile_path = orb_cat(orb_json_get_string(_payload->project, "objs_path"),
                          _obj_file(_payload));
+    ofile = ofile_path + _payload->root_offset;
 
-    asprintf(&command, _payload->compile_fmt, _payload->cfile_path, ofile_path);
-    if (!command) {
-        orb_err("compilation command asprintf error");
-        free(payload);
+    if (orb_file_exist(ofile_path)) {
+        orb_stat(PPL, NULL, "  %s already exists", ofile);
+        orb_json_string(_payload->o_files, NULL, ofile_path);
+    } else {
+        char * command = NULL;
+        const char * cfile_name = _payload->cfile_path + _payload->root_offset;
+
+        asprintf(&command, _payload->compile_fmt, _payload->cfile_path, ofile_path);
+        if (!command) {
+            orb_err("compilation command asprintf error");
+            free(payload);
+        }
+
+        res = WEXITSTATUS(system(command));
+        if (res == 0) {
+            orb_json_string(_payload->o_files, NULL, ofile_path);
+            orb_stat(PPL, NULL, "  %s ⟶ %s", cfile_name, ofile);
+        } else
+            orb_stat(RED, NULL, "  %s ⟶ X",  cfile_name);
+
+        free(command);
+
+        orb_json_bool(_payload->project, "compile_turn", true);
     }
 
-    res = WEXITSTATUS(system(command));
-    if (res == 0) {
-        const char * ofile = ofile_path + _payload->root_offset;
-        orb_json_string(orb_json_find(_payload->project, "o_files"), NULL, ofile_path);
-        orb_stat(PPL, NULL, "  %s ⟶ %s", _payload->cfile_name, ofile);
-    } else
-        orb_stat(RED, NULL, "  %s ⟶ X",  _payload->cfile_name);
-
-    free(command);
     free(payload);
     return res;
 }
 
 static struct cmpl_payload * _payload(json_object * project,
+                                      json_object * o_files,
                                       const char * repo_root,
                                       const char * cfile,
                                       const char * cmd_fmt)
@@ -180,10 +189,41 @@ static struct cmpl_payload * _payload(json_object * project,
     payload->project = project;
     payload->root_offset = strlen(repo_root) + sizeof(char);
     payload->cfile_path = cfile;
-    payload->cfile_name = cfile + payload->root_offset;
     payload->compile_fmt = cmd_fmt;
+    payload->o_files = o_files;
 
     return payload;
+}
+
+static bool _is_outdated(json_object * new, size_t off, const char * file)
+{
+    const char * file_new;
+
+    for(size_t i = 0; i < json_object_array_length(new); ++i) {
+        file_new = json_object_get_string(json_object_array_get_idx(new, i));
+        file_new += off;
+
+        if (!strcmp(file, file_new))
+            return false;
+    }
+
+    return true;
+}
+
+static void _clear_old_o_files(json_object * project)
+{
+    const char * file;
+    const char * repo_root = orb_json_get_string(project, "repo_root");
+    const char * dirname = orb_json_get_string(project, "dirname");
+    size_t off = strlen(repo_root) + strlen("/build/obj//") + strlen(dirname);
+    json_object * new = orb_json_find(project, "o_files");
+    json_object * old = orb_json_find(project, "o_files_old");
+
+    for(size_t i = 0; i < json_object_array_length(old); ++i) {
+        file = json_object_get_string(json_object_array_get_idx(old, i));
+        if (_is_outdated(new, off, file + off))
+            orb_rmrf(file);
+    }
 }
 
 bool orb_compile_project(json_object * project)
@@ -192,12 +232,12 @@ bool orb_compile_project(json_object * project)
     char * flags;
     char * cmd_fmt;
     json_object * comp_opt = _comp_opt(project);
+    json_object * o_files = orb_json_array(project, "o_files");
     json_object * c_files = orb_json_find(project, "c_files");
     const char * repo_root = orb_json_get_string(project, "repo_root");
 
     orb_try(comp_opt);
 
-    orb_json_array(project, "o_files");
     orb_json_string(comp_opt, NULL, "fPIC");
     orb_json_string(_dep_incl(project), NULL, "includes");
 
@@ -209,15 +249,17 @@ bool orb_compile_project(json_object * project)
 
     for(size_t i = 0; i < json_object_array_length(c_files); ++i) {
         const char * cfile;
-        struct cmpl_payload * pld;
+        struct cmpl_payload * payload;
 
         cfile = json_object_get_string(json_object_array_get_idx(c_files, i));
-        pld = _payload(project, repo_root, cfile, cmd_fmt);
+        payload = _payload(project, o_files, repo_root, cfile, cmd_fmt);
 
-        orb_agent_task_append(_file_compile, pld);
+        orb_agent_task_append(_file_compile, payload);
     }
 
     res = orb_agent_wait();
+
+    _clear_old_o_files(project);
 
     free(cmd_fmt);
     free(flags);

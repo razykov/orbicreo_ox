@@ -10,7 +10,7 @@ json_object * orb_json_array(json_object * parent, const char * name);
 
 json_object * orb_json_i32(json_object * parent, const char * name, i32 val);
 
-json_object * orb_json_bool(json_object * parent, const char * name, bool val);
+void orb_json_bool(json_object * parent, const char * name, bool val);
 
 json_object * orb_json_string(json_object * parent,
                               const char * name, const char * val);

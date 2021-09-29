@@ -76,6 +76,10 @@ struct orb_ctx * orb_ctx_create(char ** argv)
 
     ctx->njobs = 1;
 
+    ctx->verbose = false;
+    ctx->clear = false;
+    ctx->clear_deps = false;
+
     _name_read(ctx, argv);
     _get_root(ctx);
 

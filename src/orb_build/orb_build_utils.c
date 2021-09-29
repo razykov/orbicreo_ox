@@ -119,6 +119,13 @@ static json_object * _new_version(void)
     return json;
 }
 
+static json_object * _new_meta(void)
+{
+    json_object * meta = orb_json_object(NULL, NULL);
+    orb_json_string(meta, "cfg_cache", "");
+    return meta;
+}
+
 static void _receipt_parse(json_object * proj, json_object * recipe)
 {
     json_object * tmp;
@@ -134,23 +141,39 @@ static void _proj_add(const char * dname, json_object * proj_set_json)
 {
     json_object * tmp;
     json_object * json;
+    json_object * repo_root;
+    char buff[ORB_ROOT_SZ];
     char * path    = strdup(orb_cat(context->repo_projects, dname));
     char * recipe  = strdup(orb_cat(path, "recipe.json"));
     char * version = strdup(orb_cat(path, "version.json"));
 
     tmp = json_object_from_file(recipe);
-    if (!tmp) goto proj_add_fail;
+    if (!tmp) {
+        orb_err("error while project config read");
+        goto proj_add_fail;
+    }
 
     json = orb_json_object(NULL, NULL);
-    orb_json_string(json, "repo_root", context->root);
+    repo_root = orb_json_string(json, "repo_root", context->root);
     orb_json_string(json, "dirname", dname);
     orb_json_string(json, "project_path", path);
+    orb_json_string(json, "recipe_path", recipe);
+
+    orb_json_bool(json, "compile_turn", false);
 
     _receipt_parse(json, tmp);
 
     tmp = json_object_from_file(version);
     if (!tmp) tmp = _new_version();
     orb_json_move(json, tmp, "version");
+
+    snprintf(buff, ORB_ROOT_SZ - 1,
+             "%s/build/%s/meta.json", json_object_get_string(repo_root), dname);
+    orb_json_string(json, "meta_path", buff);
+
+    tmp = json_object_from_file(buff);
+    if (!tmp) tmp = _new_meta();
+    orb_json_move(json, tmp, "meta");
 
     orb_json_move(proj_set_json, json, orb_json_get_string(json, "project_name"));
 

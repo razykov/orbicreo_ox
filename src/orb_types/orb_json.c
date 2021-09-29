@@ -35,11 +35,16 @@ json_object * orb_json_i32(json_object * parent, const char * name, i32 val)
     return json;
 }
 
-json_object * orb_json_bool(json_object * parent, const char * name, bool val)
+void orb_json_bool(json_object * parent, const char * name, bool val)
 {
-    json_object * json = json_object_new_boolean(val);
-    orb_json_move(parent, json, name);
-    return json;
+    json_object * json = orb_json_find(parent, name);
+
+    if (json) {
+        json_object_set_boolean(json, val);
+    } else {
+        json = json_object_new_boolean(val);
+        orb_json_move(parent, json, name);
+    }
 }
 
 json_object * orb_json_string(json_object * parent,
