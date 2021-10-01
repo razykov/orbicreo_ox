@@ -33,39 +33,6 @@ typedef enum {
 } bool;
 #endif
 
-enum orb_goal {
-    ORB_GOAL_BUILD = 0,
-    ORB_GOAL_HELP,
-    ORB_GOAL_INIT,
-    ORB_GOAL_LIST
-};
-
-struct orb_project {
-    char * name;
-};
-
-struct orb_ctx {
-    char appname[ORB_APPNAME_SZ];
-    char root[ORB_ROOT_SZ];
-    char repo_projects[ORB_PATH_SZ];
-
-    char * target_proj;
-    json_object * proj_set_json;
-
-    struct {
-        u32 ncount;
-        struct orb_project * data;
-    } projects;
-
-    enum orb_goal goal;
-
-    bool verbose;
-    bool clear;
-    bool clear_deps;
-
-    u8 njobs;
-};
-
 struct orb_bts {
     u8 * data;
     size_t size;
@@ -73,11 +40,6 @@ struct orb_bts {
 
 struct orb_bts * orb_bts_malloc(size_t size);
 void orb_bts_free(struct orb_bts * bts);
-
-struct orb_ctx * orb_ctx_create(char ** argv);
-void orb_ctx_destroy(struct orb_ctx * ctx);
-
-void orb_cxt_proj_expand(struct orb_ctx * ctx);
 
 void orb_bts_append_u8(struct orb_bts * bts, u8 byte);
 

@@ -2,18 +2,18 @@
 #include "../orb_utils/orb_log.h"
 #include "../orb_build/orb_build_utils.h"
 
-static void _print_projects_list(json_object * set)
+static void _print_projects_list(void)
 {
-    json_object_object_foreach(set, key, val) {
-        orb_txt("    %s", orb_json_get_string(val, "project_name"));
-        ((void)key);
+    struct orb_project * list = context.projects;
+
+    while (list) {
+        orb_txt("    %s", list->name);
+        list = list->next;
     }
 }
 
 void orb_goal_list(void)
 {
-    json_object * set = orb_projects_set();
-
-    if (set) _print_projects_list(set);
+    if (context.projects) _print_projects_list();
     else orb_err("error while read projects recipes");
 }

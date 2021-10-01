@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "orb_utils/orb_log.h"
-#include "orb_utils/orb_args.h"
 #include "orb_utils/orb_utils.h"
+#include "orb_types/orb_context.h"
 #include "orb_init/orb_goal_init.h"
 #include "orb_list/orb_goal_list.h"
 #include "orb_build/orb_goal_build.h"
@@ -9,7 +9,7 @@
 
 static void _help(void)
 {
-    orb_txt("Using: %s [opt]... ", context->appname);
+    orb_txt("Using: %s [opt]... ", context.appname);
     orb_txt("");
     orb_txt("Options:");
     orb_txt("    -h, --help           Print this message");
@@ -29,7 +29,7 @@ static void _help(void)
 
 static void _exec_goal()
 {
-    switch (context->goal) {
+    switch (context.goal) {
     case ORB_GOAL_BUILD: orb_goal_build(); break;
     case ORB_GOAL_INIT : orb_goal_init();  break;
     case ORB_GOAL_LIST : orb_goal_list();  break;
@@ -42,15 +42,12 @@ static void _exec_goal()
 
 i32 main (i32 argc, char ** argv)
 {
-    if (!orb_args_parse(argc, argv))
+    if (!orb_ctx_init(argc, argv))
         return EXIT_FAILURE;
 
     _exec_goal();
 
-    orb_ctx_destroy(context);
-
-    (void)argc;
-    (void)argv;
+    orb_ctx_destroy();
 
     return EXIT_SUCCESS;
 }

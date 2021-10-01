@@ -9,21 +9,16 @@
 #include "../orb_job_agent/orb_job_agent.h"
 
 struct cmpl_payload {
-    json_object * project;
-    json_object * o_files;
-
-    size_t root_offset;
+    struct orb_project * project;
 
     const char * compile_fmt;
     const char * cfile_path;
 };
 
-static const char * _compiler(json_object * project)
+static const char * _compiler(struct orb_project * project)
 {
     const char * compiler;
-    project = orb_json_find(project, "recipe");
-    project = orb_json_find(project, "general");
-    compiler  = orb_json_get_string(project, "compiler_name");
+    compiler  = orb_json_get_string(project->recipe.obj, "compiler_name");
     return compiler ? compiler : "cc";
 }
 
@@ -34,31 +29,14 @@ static const char * _obj_file(struct cmpl_payload * pld)
     return buff;
 }
 
-static json_object * _comp_opt(json_object * project)
+static json_object * _comp_opt(struct orb_project * project)
 {
-    project = orb_json_find(project, "recipe");
-    project = orb_json_find(project, "general");
-    project = orb_json_find(project, "compiler_options");
-    return project;
+    json_object * opts;
+    opts = orb_json_find(project->recipe.obj, "compiler_options");
+    return opts;
 }
 
-static const char * _comp_std(json_object * project)
-{
-    project = orb_json_find(project, "recipe");
-    project = orb_json_find(project, "general");
-    return orb_json_get_string(project, "compiler_std");
-}
-
-static json_object * _dep_incl(json_object * project)
-{
-    json_object * gen;
-    project = orb_json_find(project, "recipe");
-    gen = project = orb_json_find(project, "general");
-    project = orb_json_find(project, "dependency_include");
-    return project ? project : orb_json_array(gen, "dependency_include");
-}
-
-static char * _compiler_options(json_object * project)
+static char * _compiler_options(struct orb_project * project)
 {
     size_t len = 0;
     char * flags;
@@ -81,7 +59,7 @@ static char * _compiler_options(json_object * project)
         flags = orb_strexp(flags, &len, " ");
     }
 
-    comp_std = _comp_std(project);
+    comp_std = orb_json_get_string(project->recipe.obj, "compiler_std");
     if (comp_std) {
         flags = orb_strexp(flags, &len, "-std=");
         flags = orb_strexp(flags, &len, comp_std);
@@ -90,17 +68,10 @@ static char * _compiler_options(json_object * project)
     return flags;
 }
 
-static void _dependency_include(json_object * project,
+static void _dependency_include(struct orb_project * project,
                                 char ** cmd, size_t * len)
 {
-    json_object * gnrl;
-    json_object * json = orb_json_find(project, "recipe");
-
-    gnrl = json = orb_json_find(json, "general");
-    json = orb_json_find(json, "dependency_include");
-
-    if (!json)
-        json = orb_json_array(gnrl, "dependency_include");
+    json_object * json = project->recipe.dependency_include;
 
     for(size_t i = 0; i < json_object_array_length(json); ++i) {
         json_object * elem = json_object_array_get_idx(json, i);
@@ -113,7 +84,8 @@ static void _dependency_include(json_object * project,
     }
 }
 
-static char * _file_compile_cmd_fmt(json_object * project, const char * flags)
+static char * _file_compile_cmd_fmt(struct orb_project * project,
+                                    const char * flags)
 {
     char * cmd;
     size_t len = 0;
@@ -143,16 +115,15 @@ static i32 _file_compile(void * payload)
     if (!_payload)
         return -1;
 
-    ofile_path = orb_cat(orb_json_get_string(_payload->project, "objs_path"),
-                         _obj_file(_payload));
-    ofile = ofile_path + _payload->root_offset;
+    ofile_path = orb_cat(_payload->project->objs_path, _obj_file(_payload));
+    ofile = ofile_path + context.rt_off;
 
     if (orb_file_exist(ofile_path)) {
         orb_stat(PPL, NULL, "  %s already exists", ofile);
-        orb_json_string(_payload->o_files, NULL, ofile_path);
+        orb_json_string(_payload->project->files.o, NULL, ofile_path);
     } else {
         char * command = NULL;
-        const char * cfile_name = _payload->cfile_path + _payload->root_offset;
+        const char * cfile_name = _payload->cfile_path + context.rt_off;
 
         asprintf(&command, _payload->compile_fmt, _payload->cfile_path, ofile_path);
         if (!command) {
@@ -162,23 +133,21 @@ static i32 _file_compile(void * payload)
 
         res = WEXITSTATUS(system(command));
         if (res == 0) {
-            orb_json_string(_payload->o_files, NULL, ofile_path);
+            orb_json_string(_payload->project->files.o, NULL, ofile_path);
             orb_stat(PPL, NULL, "  %s ⟶ %s", cfile_name, ofile);
         } else
             orb_stat(RED, NULL, "  %s ⟶ X",  cfile_name);
 
         free(command);
 
-        orb_json_bool(_payload->project, "compile_turn", true);
+        _payload->project->compile_turn = true;
     }
 
     free(payload);
     return res;
 }
 
-static struct cmpl_payload * _payload(json_object * project,
-                                      json_object * o_files,
-                                      const char * repo_root,
+static struct cmpl_payload * _payload(struct orb_project * project,
                                       const char * cfile,
                                       const char * cmd_fmt)
 {
@@ -187,10 +156,8 @@ static struct cmpl_payload * _payload(json_object * project,
     if (!payload) return NULL;
 
     payload->project = project;
-    payload->root_offset = strlen(repo_root) + sizeof(char);
     payload->cfile_path = cfile;
     payload->compile_fmt = cmd_fmt;
-    payload->o_files = o_files;
 
     return payload;
 }
@@ -210,14 +177,13 @@ static bool _is_outdated(json_object * new, size_t off, const char * file)
     return true;
 }
 
-static void _clear_old_o_files(json_object * project)
+static void _clear_old_o_files(struct orb_project * project)
 {
     const char * file;
-    const char * repo_root = orb_json_get_string(project, "repo_root");
-    const char * dirname = orb_json_get_string(project, "dirname");
-    size_t off = strlen(repo_root) + strlen("/build/obj//") + strlen(dirname);
-    json_object * new = orb_json_find(project, "o_files");
-    json_object * old = orb_json_find(project, "o_files_old");
+    const char * dirname = project->dirname;
+    size_t off = context.rt_off + strlen("/build/obj/") + strlen(dirname);
+    json_object * new = project->files.o;
+    json_object * old = project->files.o_old;
 
     for(size_t i = 0; i < json_object_array_length(old); ++i) {
         file = json_object_get_string(json_object_array_get_idx(old, i));
@@ -226,20 +192,18 @@ static void _clear_old_o_files(json_object * project)
     }
 }
 
-bool orb_compile_project(json_object * project)
+bool orb_compile_project(struct orb_project * project)
 {
     bool res;
     char * flags;
     char * cmd_fmt;
     json_object * comp_opt = _comp_opt(project);
-    json_object * o_files = orb_json_array(project, "o_files");
-    json_object * c_files = orb_json_find(project, "c_files");
-    const char * repo_root = orb_json_get_string(project, "repo_root");
+    json_object * c_files = project->files.c;
 
     orb_try(comp_opt);
 
     orb_json_string(comp_opt, NULL, "fPIC");
-    orb_json_string(_dep_incl(project), NULL, "includes");
+    orb_json_string(project->recipe.dependency_include, NULL, "includes");
 
     flags = _compiler_options(project);
     cmd_fmt = _file_compile_cmd_fmt(project, flags);
@@ -252,7 +216,7 @@ bool orb_compile_project(json_object * project)
         struct cmpl_payload * payload;
 
         cfile = json_object_get_string(json_object_array_get_idx(c_files, i));
-        payload = _payload(project, o_files, repo_root, cfile, cmd_fmt);
+        payload = _payload(project, cfile, cmd_fmt);
 
         orb_agent_task_append(_file_compile, payload);
     }

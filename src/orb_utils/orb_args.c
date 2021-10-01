@@ -7,16 +7,12 @@
 #include <unistd.h>
 
 #include "orb_args.h"
-
-struct orb_ctx * context;
+#include "../orb_types/orb_context.h"
 
 bool orb_args_parse(i32 argc, char ** argv)
 {
     i32 c;
     i32 iarg;
-
-    if (!(context = orb_ctx_create(argv)))
-        return false;
 
     while (true) {
         i32 option_index = 0;
@@ -42,40 +38,40 @@ bool orb_args_parse(i32 argc, char ** argv)
             break;
 
         case 'h':
-            context->goal = ORB_GOAL_HELP;
+            context.goal = ORB_GOAL_HELP;
             break;
 
         case 'i':
-            context->goal = ORB_GOAL_INIT;
+            context.goal = ORB_GOAL_INIT;
             break;
 
         case 'b':
-            context->goal = ORB_GOAL_BUILD;
+            context.goal = ORB_GOAL_BUILD;
             break;
 
         case 'c':
-            context->clear = true;
+            context.clear = true;
             break;
 
         case 'C':
-            context->clear_deps = true;
+            context.clear_deps = true;
             break;
 
         case 'l':
-            context->goal = ORB_GOAL_LIST;
+            context.goal = ORB_GOAL_LIST;
             break;
 
         case 'p':
-            context->target_proj = strdup(optarg);
+            context.target_proj = strdup(optarg);
             break;
 
         case 'j':
             iarg = atoi(optarg);
-            context->njobs = iarg < 1 ? 1 : iarg > 255 ? 255 : iarg;
+            context.njobs = iarg < 1 ? 1 : iarg > 255 ? 255 : iarg;
             break;
 
         case 'v':
-            context->verbose = true;
+            context.verbose = true;
             break;
 
         case '?':

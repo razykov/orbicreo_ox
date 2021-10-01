@@ -6,6 +6,7 @@
 #include "../orb_utils/orb_args.h"
 #include "../orb_utils/orb_log.h"
 #include "../orb_utils/orb_utils.h"
+#include "../orb_types/orb_context.h"
 #include "../orb_utils/orb_utils_str.h"
 #include "../orb_build/orb_build_utils.h"
 #include "../orb_build/orb_build_mkinclude.h"
@@ -13,13 +14,6 @@
 
 static void _hfile_exports(const char * hfile,
                            FILE * file, json_object * exported);
-
-static json_object * _h_files(json_object * project)
-{
-    json_object * array = orb_json_array(project, "h_files");
-    orb_find_nexp_files(orb_json_get_string(project, "project_path"), array, ".h");
-    return array;
-}
 
 static bool _continue_export(const char * hfile, json_object * exported)
 {
@@ -139,33 +133,24 @@ static void _hfiles_iter(json_object * h_files, FILE * file)
     json_object_put(exported);
 }
 
-static const char * _include_fname(json_object * project)
+static const char * _include_fname(struct orb_project * project)
 {
     static __thread char buff[ORB_PATH_SZ];
-    const char * pname = orb_json_get_string(project, "project_name");
-    sprintf(buff, "%s/includes/lib%s.h", context->root, pname);
+    sprintf(buff, "%s/includes/lib%s.h", context.root, project->name);
     return buff;
 }
 
-static const char * _incduard(json_object * project)
+static const char * _incduard(struct orb_project * project)
 {
     static __thread char incduard[256] = { 0 };
-    sprintf(incduard, "%s_H", orb_json_get_string(project, "project_name"));
+    sprintf(incduard, "%s_H", project->name);
     orb_upstr(incduard);
     return incduard;
 }
 
-static json_object * _export_includes(json_object * project)
+static void _hfiles_append(struct orb_project * project, FILE * file)
 {
-    project = orb_json_find(project, "recipe");
-    project = orb_json_find(project, "general");
-    project = orb_json_find(project, "export_includes");
-    return project;
-}
-
-static void _hfiles_append(json_object * project, FILE * file)
-{
-    json_object * eicnl = _export_includes(project);
+    json_object * eicnl = project->recipe.exp_incl;
 
     if(!eicnl) return;
 
@@ -177,7 +162,7 @@ static void _hfiles_append(json_object * project, FILE * file)
     fprintf(file, "\n");
 }
 
-static void _start_proj_header(json_object * project, FILE * file)
+static void _start_proj_header(struct orb_project * project, FILE * file)
 {
     fprintf(file, "#ifndef %s\n",   _incduard(project));
     fprintf(file, "#define %s\n\n", _incduard(project));
@@ -185,38 +170,36 @@ static void _start_proj_header(json_object * project, FILE * file)
     _hfiles_append(project, file);
 }
 
-static void _end_proj_header(json_object * project, FILE * file)
+static inline void _end_proj_header(struct orb_project * project, FILE * file)
 {
     fprintf(file, "#endif /* %s */\n", _incduard(project));
 }
 
-static bool _mkinclude(json_object * project)
+static bool _mkinclude(struct orb_project * project)
 {
     FILE * file;
     const char * fname = _include_fname(project);
-    json_object * h_files = _h_files(project);
 
     file = fopen(fname, "w+");
     if(!file) return false;
 
     _start_proj_header(project, file);
-    _hfiles_iter(h_files, file);
+    _hfiles_iter(project->files.h, file);
     _end_proj_header(project, file);
 
     return fclose(file) == 0;
 }
 
-bool orb_mkinclude(json_object * project)
+bool orb_mkinclude(struct orb_project * project)
 {
      bool res = false;
-    const char * type = orb_proj_type(project);
 
-    if (!strcmp(type, "shared")) {
-        u32 root_off = strlen(orb_json_get_string(project, "repo_root")) + sizeof(char);
+    if (!strcmp(project->type, "shared")) {
+        u32 root_off = strlen(context.root) + sizeof(char);
 
         orb_inf("Project header file generating");
 
-        if (orb_mkdir_p(orb_cat(context->root, "includes")))
+        if (orb_mkdir_p(orb_cat(context.root, "includes")))
             if (_mkinclude(project))
                 res = true;
 

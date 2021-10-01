@@ -1,6 +1,8 @@
 #define _XOPEN_SOURCE 500
+#define _DEFAULT_SOURCE
 #include <ftw.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -44,7 +46,7 @@ i32 unlink_cb(const char * fpath,
 {
     i32 r = remove(fpath);
     if (r)
-        perror(fpath);
+        orb_err("file remove %s", fpath);
 
     (void)sb;
     (void)typeflag;
@@ -54,7 +56,8 @@ i32 unlink_cb(const char * fpath,
 
 bool orb_rmrf(const char * path)
 {
-    return nftw(path, unlink_cb, 64, FTW_DEPTH | FTW_PHYS) == 0;
+    i32 r = nftw(path, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+    return r == 0 ? true : errno == ENOENT;
 }
 
 static char * _next_dir(char ** dir)
@@ -296,4 +299,12 @@ struct orb_bts * orb_file_read(const char * path)
 
     fclose(file);
     return bts;
+}
+
+bool orb_is_include_dir(struct dirent * dir)
+{
+    if (!dir || dir->d_type != DT_DIR) return false;
+    if (!strcmp(dir->d_name, "." ))    return false;
+    if (!strcmp(dir->d_name, ".."))    return false;
+    return true;
 }

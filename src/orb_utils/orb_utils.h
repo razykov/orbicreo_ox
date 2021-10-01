@@ -1,14 +1,17 @@
 #ifndef ORB_UTILS_H
 #define ORB_UTILS_H
 
+#include <dirent.h>
 #include <sys/types.h>
 #include <json-c/json.h>
+
 #include "../orb_types/orb_types.h"
 
 #define SHA1_LEN       (20)
 #define SHA1_EMPTY_STR "0000000000000000000000000000000000000000"
 
-#define orb_try(PRED) if (!(PRED)) return false
+#define orb_try(pred)  if (!(pred)) return false
+#define safe_free(val) if (val) { free(val); val = NULL; }
 
 typedef u8 * orb_sha1;
 
@@ -31,5 +34,7 @@ orb_sha1 orb_file_sha1(const char * path);
 const char * orb_sha2str(orb_sha1 sha1);
 
 struct orb_bts * orb_file_read(const char * path);
+
+bool orb_is_include_dir(struct dirent * dir);
 
 #endif /* ORB_UTILS_H */

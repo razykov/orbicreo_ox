@@ -4,13 +4,14 @@
 #include "../orb_utils/orb_log.h"
 #include "../orb_utils/orb_utils.h"
 #include "../orb_utils/orb_args.h"
+#include "../orb_types/orb_context.h"
 
 #define SHARE_DIR "/usr/share/orbicreo/"
 #define EMPTY_PRJ "projects/empty_app/"
 
 bool orb_goal_init(void)
 {
-    const char * root = context->root;
+    const char * root = context.root;
 
     orb_inf("orbicreo init");
 
