@@ -97,6 +97,7 @@ bool orb_ctx_init(i32 argc, char ** argv)
     context.verbose    = false;
     context.clear      = false;
     context.clear_deps = false;
+    context.release    = false;
 
     orb_try(_name_read(argv));
     orb_try(_get_root());

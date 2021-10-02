@@ -20,6 +20,7 @@ static void _help(void)
     orb_txt("    -C, --clear_deps     Clear project dependencies");
     orb_txt("    -p, --project [name] Project name to build");
     orb_txt("    -j, --jobs [count]   Number of build threads");
+    orb_txt("    -r, --release        Release build");
     orb_txt("    -v, --verbose        Verbose outputs");
     orb_txt("");
     orb_txt("Bug report email <v.razykov@gmail.com>");

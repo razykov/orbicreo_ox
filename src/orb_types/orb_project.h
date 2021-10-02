@@ -24,6 +24,7 @@ struct orb_project {
         json_object * dependency_include;
 
         char * output_file;
+        char * bin_file_dir;
     } recipe;
 
     struct files {

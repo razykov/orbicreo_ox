@@ -83,6 +83,40 @@ static bool _clear_project_by_context(struct orb_project * project)
     return true;
 }
 
+static bool _version_increment(struct orb_project * project)
+{
+    i32 r;
+    if (project->compile_turn && context.release) {
+        json_object * build = orb_json_find(project->version, "build");
+
+        if (!json_object_int_inc(build, 1)) {
+            orb_err("build increment failed");
+            return false;
+        }
+
+        r = json_object_to_file_ext(project->version_path, project->version,
+                                    JSON_C_TO_STRING_PRETTY);
+        if (r == -1) {
+            orb_err("version.json write error (%s)", json_util_get_last_err());
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool _version_update(struct orb_project * project)
+{
+    i32 r;
+
+    r = json_object_to_file_ext(project->version_path,
+                                project->version, JSON_C_TO_STRING_PRETTY);
+    if (r == -1) {
+        orb_err("version.json write error (%s)", json_util_get_last_err());
+        return false;
+    }
+    return true;
+}
+
 static bool _build_project(struct orb_project * project)
 {
     if (project->built)
@@ -100,8 +134,11 @@ static bool _build_project(struct orb_project * project)
     orb_try(_clear_project_by_context(project));
 
     orb_try(orb_compile_project(project));
+    orb_try(_version_increment(project));
     orb_try(orb_link_project(project));
     orb_try(orb_mkinclude(project));
+
+    orb_try(_version_update(project));
 
     project->built = true;
 

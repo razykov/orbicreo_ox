@@ -21,6 +21,8 @@ json_object * orb_json_find(json_object * json, const char * key);
 
 const char * orb_json_get_string(struct json_object * json, const char * key);
 
+i32 orb_json_get_int(json_object * json, const char * key);
+
 const char * orb_json_get_string_idx(json_object * json, size_t idx);
 
 #endif /* ORB_JSON_H */

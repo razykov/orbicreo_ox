@@ -63,9 +63,13 @@ static inline const char * _directory_dest(struct orb_project * project)
 
 static const char * _dest(struct orb_project * project)
 {
+    const char * dir_dest = _directory_dest(project);
     static __thread char buff[ORB_PATH_SZ];
 
-    sprintf(buff, "%s/bin/%s", context.root, _directory_dest(project));
+    while (*dir_dest == '/')
+        ++dir_dest;
+
+    sprintf(buff, "%s/bin/%s", context.root, dir_dest);
     if (buff[strlen(buff) - 1] != '/')
         buff[strlen(buff)] = '/';
 
@@ -75,7 +79,14 @@ static const char * _dest(struct orb_project * project)
 static inline bool _output_file_path(struct orb_project * project)
 {
     const char * fmt = strcmp(project->type, "shared") ? "%s%s" : "%slib%s.so";
-    asprintf(&project->recipe.output_file, fmt, _dest(project), project->name);
+
+    project->recipe.bin_file_dir = strdup(_dest(project));
+    if (!project->recipe.bin_file_dir)
+        return false;
+
+    asprintf(&project->recipe.output_file,
+             fmt, project->recipe.bin_file_dir, project->name);
+
     return project->recipe.output_file != NULL;
 }
 
@@ -161,8 +172,8 @@ static json_object * _new_version(void)
 {
     json_object * json = orb_json_object(NULL, NULL);
     orb_json_i32(json, "major", 0);
-    orb_json_i32(json, "minor", 0);
-    orb_json_i32(json, "build", 0);
+    orb_json_i32(json, "minor", 1);
+    orb_json_i32(json, "build", 1);
     return json;
 }
 

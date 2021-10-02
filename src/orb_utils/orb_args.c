@@ -25,11 +25,13 @@ bool orb_args_parse(i32 argc, char ** argv)
             { "clear_deps", no_argument,       NULL, 'C' },
             { "project",    optional_argument, NULL, 'p' },
             { "jobs",       optional_argument, NULL, 'j' },
+            { "release",    no_argument,       NULL, 'r' },
             { "verbose",    no_argument,       NULL, 'v' },
             { 0, 0, NULL, 0 }
         };
 
-        c = getopt_long(argc, argv, "bhilcCp:j:v", long_options, &option_index);
+        c = getopt_long(argc, argv,
+                        "bhilcCp:j:vr", long_options, &option_index);
         if (c == -1) break;
 
         switch (c) {
@@ -68,6 +70,10 @@ bool orb_args_parse(i32 argc, char ** argv)
         case 'j':
             iarg = atoi(optarg);
             context.njobs = iarg < 1 ? 1 : iarg > 255 ? 255 : iarg;
+            break;
+
+        case 'r':
+            context.release = true;
             break;
 
         case 'v':

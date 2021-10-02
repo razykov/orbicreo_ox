@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+#include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
 #include "../orb_utils/orb_log.h"
@@ -8,6 +10,11 @@
 #include "../orb_build/orb_build_link.h"
 #include "../orb_build/orb_build_utils.h"
 
+enum out_path {
+    OPATH_FULL,
+    OPATH_SHORT,
+    OPATH_CLEAN
+};
 
 inline static const char * _shared(struct orb_project * project)
 {
@@ -21,28 +28,27 @@ static const char * _linker(struct orb_project * project)
     return linker ? linker : "cc";
 }
 
-static const char * _directory_dest(struct orb_project * project)
+static const char * _version_suffix(struct orb_project * project, bool full)
 {
-    const char * dist;
-    dist = orb_json_get_string(project->recipe.obj, "directory_dest");
-    return dist ? dist : "";
-}
+    static __thread char buff[32];
+    buff[0] = '\0';
+    if (!strcmp(project->type, "shared")) {
+        i32 major = orb_json_get_int(project->version, "major");
+        i32 minor = orb_json_get_int(project->version, "minor");
+        i32 build = orb_json_get_int(project->version, "build");
 
-static const char * _dest(struct orb_project * project)
-{
-    static __thread char buff[ORB_PATH_SZ];
-
-    sprintf(buff, "%s/bin/%s", context.root, _directory_dest(project));
-    if (buff[strlen(buff) - 1] != '/')
-        buff[strlen(buff)] = '/';
-
+        if (full)
+            sprintf(buff, ".%d.%d.%d", major, minor, build);
+        else
+            sprintf(buff, ".%d", major);
+    }
     return buff;
 }
 
-static char * _output_file(struct orb_project * project, char * cmd, size_t * len)
+static char * _output_file(const char * file, char * cmd, size_t * len)
 {
     cmd = orb_strexp(cmd, len, " -o ");
-    cmd = orb_strexp(cmd, len, project->recipe.output_file);
+    cmd = orb_strexp(cmd, len, file);
     return cmd;
 }
 
@@ -136,20 +142,61 @@ static void _ofiles_print(struct orb_project * project)
     orb_stat(PPL, NULL, "     └─%*s─┘", ofp_len);
 }
 
+static char * _output_file_path(struct orb_project * project, enum out_path op)
+{
+    char * buff;
+    const char * basic = project->recipe.output_file;
+
+    switch (op) {
+    case OPATH_FULL:
+        asprintf(&buff, "%s%s", basic, _version_suffix(project, true));
+        break;
+    case OPATH_SHORT:
+        asprintf(&buff, "%s%s", basic, _version_suffix(project, false));
+        break;
+    default:
+        asprintf(&buff, "%s", basic);
+    }
+    return buff;
+}
+
+static void _bin_clear(struct orb_project * project)
+{
+    char buff[ORB_PATH_SZ];
+    const char * dirpath = project->recipe.bin_file_dir;
+    DIR * d = opendir(dirpath);
+    if (d) {
+        struct dirent * dir;
+        while ((dir = readdir(d)) != NULL) {
+            sprintf(buff, "%s/%s", dirpath, dir->d_name);
+            if (strstr(dir->d_name, project->name))
+                orb_rmrf(buff);
+        }
+        closedir(d);
+    }
+}
+
+static bool _lib_symlink(const char * file, const char * link)
+{
+    orb_stat(PPL, "", "  symlink %s ⟶ %s",
+                         file + context.rt_off, link + context.rt_off);
+    return symlink(file, link) == 0;
+}
+
 bool orb_link_project(struct orb_project * project)
 {
-    i32 res;
+    bool res;
     char * cmd;
     size_t len = 0;
-    const char * output_file_path;
 
-    output_file_path = project->recipe.output_file + context.rt_off;
+    char * bin_full  = _output_file_path(project, OPATH_FULL);
 
     orb_inf("Linking");
     orb_stat(CYN, "Linkable libraries", "%s", _liblist(project));
 
-    if (!project->compile_turn) {
-        orb_stat(PPL, NULL, "  %s already exist", output_file_path);
+    if (!project->compile_turn && orb_file_exist(bin_full)) {
+        orb_stat(PPL, NULL, "  %s already exist", bin_full + context.rt_off);
+        free(bin_full);
         return true;
     }
 
@@ -158,14 +205,25 @@ bool orb_link_project(struct orb_project * project)
     cmd = orb_strexp(cmd, &len, _shared(project));
     orb_monorepo_libs(&cmd, &len);
     cmd = _ofiles(project, cmd, &len);
-    cmd = _output_file(project, cmd, &len);
+    cmd = _output_file(bin_full, cmd, &len);
     cmd = _liblinks(project, cmd, &len);
 
-    orb_mkdir_p(_dest(project));
-    res = WEXITSTATUS(system(cmd)) == 0;
-    if (res)
+    orb_mkdir_p(project->recipe.bin_file_dir);
+    _bin_clear(project);
+
+    res = (WEXITSTATUS(system(cmd)) == 0);
+    if (res) {
         _ofiles_print(project);
 
+        if (!strcmp(project->type, "shared")) {
+            char * bin_short = _output_file_path(project, OPATH_SHORT);
+            _lib_symlink(bin_full, bin_short);
+            _lib_symlink(bin_full, project->recipe.output_file);
+            free(bin_short);
+        }
+    }
+
     free(cmd);
+    free(bin_full);
     return res;
 }
