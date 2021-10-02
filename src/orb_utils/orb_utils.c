@@ -100,14 +100,14 @@ bool orb_mkdir_p(const char * dir)
     return true;
 }
 
-const char * orb_cat(const char * root, const char * file)
+const char * orb_cat(const char * head, const char * tail)
 {
     static __thread char path[B_KB(4)];
-    snprintf(path, B_KB(4), "%s/%s", root, file);
+    snprintf(path, B_KB(4), "%s/%s", head, tail);
     return path;
 }
 
-const char * orb_get_dir(const char * path)
+static const char * _get_dir(const char * path)
 {
     char c;
     char * ptr = (char*)path;
@@ -130,7 +130,7 @@ const char * orb_get_dir(const char * path)
 
 static bool _create_dir_for_file(const char * path)
 {
-    const char * dir = orb_get_dir(path);
+    const char * dir = _get_dir(path);
     return orb_mkdir_p(dir);
 }
 
@@ -261,44 +261,6 @@ const char * orb_sha2str(orb_sha1 sha1)
         _write_byte(sha1[i], &wptr);
 
     return buff;
-}
-
-static size_t _file_size(FILE * file)
-{
-    size_t size;
-    fseek(file, 0, SEEK_END);
-    size = ftell(file);
-    rewind (file);
-    return size;
-}
-
-struct orb_bts * orb_file_read(const char * path)
-{
-    size_t nread;
-    FILE * file = NULL;
-    struct orb_bts * bts;
-
-    file = fopen(path, "r");
-    if (!file) {
-        orb_err("%s not opened", path);
-        return NULL;
-    }
-
-    bts = orb_bts_malloc(_file_size(file));
-    if (!bts) {
-        fclose(file);
-        return NULL;
-    }
-
-    nread = fread(bts->data, 1, bts->size , file);
-    if (nread != bts->size) {
-        orb_err("didn't read file completely");
-        orb_bts_free(bts);
-        bts = NULL;
-    }
-
-    fclose(file);
-    return bts;
 }
 
 bool orb_is_include_dir(struct dirent * dir)

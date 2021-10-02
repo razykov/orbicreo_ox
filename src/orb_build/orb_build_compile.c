@@ -1,6 +1,5 @@
 #define _GNU_SOURCE
 #include <string.h>
-#include <sys/wait.h>
 #include "../orb_utils/orb_log.h"
 #include "../orb_utils/orb_utils.h"
 #include "../orb_utils/orb_utils_str.h"
@@ -98,7 +97,7 @@ static char * _file_compile_cmd_fmt(struct orb_project * project,
 
     cmd = orb_strexp(cmd, &len, flags);
     _dependency_include(project, &cmd, &len);
-    orb_monorepo_libs(&cmd, &len);
+    cmd = orb_monorepo_libs(cmd, &len);
 
     cmd = orb_strexp(cmd, &len, " %s -o %s");
 

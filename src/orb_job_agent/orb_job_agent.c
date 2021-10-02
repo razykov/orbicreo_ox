@@ -1,12 +1,11 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
 #include <sys/wait.h>
 #include "orb_job_agent.h"
 #include "../orb_utils/orb_log.h"
-
-#include <unistd.h>
 
 #define MAX_JOBS 256
 
@@ -67,7 +66,7 @@ static void _task_append(struct orb_agent_task_t ** stack,
     pthread_mutex_unlock(mtx);
 }
 
-bool orb_agent_task_append(i32 (*func)(void *), void * payload)
+bool orb_agent_task_append(orb_agent_func func, void * payload)
 {
     struct orb_agent_task_t * task;
 

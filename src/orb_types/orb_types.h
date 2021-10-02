@@ -2,7 +2,6 @@
 #define ORB_TYPES_H
 
 #include <stddef.h>
-#include <json-c/json.h>
 
 #define ORB_COLOUR_CLEAR  "0"
 #define ORB_COLOUR_RED    "1;31"
@@ -32,15 +31,5 @@ typedef enum {
     true
 } bool;
 #endif
-
-struct orb_bts {
-    u8 * data;
-    size_t size;
-};
-
-struct orb_bts * orb_bts_malloc(size_t size);
-void orb_bts_free(struct orb_bts * bts);
-
-void orb_bts_append_u8(struct orb_bts * bts, u8 byte);
 
 #endif /* ORB_TYPES_H */

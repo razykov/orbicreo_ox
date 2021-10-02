@@ -23,7 +23,6 @@ SRC += src/orb_job_agent/orb_job_agent.c
 SRC += src/orb_utils/orb_log.c
 SRC += src/orb_utils/orb_utils.c
 SRC += src/orb_utils/orb_utils_str.c
-SRC += src/orb_types/orb_types.c
 SRC += src/orb_types/orb_project.c
 SRC += src/orb_types/orb_context.c
 SRC += src/orb_types/orb_json.c

@@ -1,7 +1,6 @@
 #define _GNU_SOURCE
 #include <unistd.h>
 #include <string.h>
-#include <sys/wait.h>
 #include "../orb_utils/orb_log.h"
 #include "../orb_utils/orb_args.h"
 #include "../orb_utils/orb_utils.h"
@@ -203,7 +202,7 @@ bool orb_link_project(struct orb_project * project)
     cmd = calloc(1, sizeof(char));
     cmd = orb_strexp(cmd, &len, _linker(project));
     cmd = orb_strexp(cmd, &len, _shared(project));
-    orb_monorepo_libs(&cmd, &len);
+    cmd = orb_monorepo_libs(cmd, &len);
     cmd = _ofiles(project, cmd, &len);
     cmd = _output_file(bin_full, cmd, &len);
     cmd = _liblinks(project, cmd, &len);

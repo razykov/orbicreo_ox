@@ -1,6 +1,8 @@
 #include "orb_goal_list.h"
 #include "../orb_utils/orb_log.h"
 #include "../orb_build/orb_build_utils.h"
+#include "../orb_types/orb_context.h"
+
 
 static void _print_projects_list(void)
 {

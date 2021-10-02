@@ -67,12 +67,6 @@ i32 orb_json_get_int(json_object * json, const char * key)
     return json_object_get_int(tmp);
 }
 
-const char * orb_json_get_string_idx(json_object * json, size_t idx)
-{
-    struct json_object * tmp = json_object_array_get_idx(json, idx);
-    return json_object_get_string(tmp);
-}
-
 json_object * orb_json_find(json_object * json, const char * key)
 {
     return json_object_object_get(json, key);

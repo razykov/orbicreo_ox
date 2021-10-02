@@ -30,7 +30,8 @@ static bool _build_depends(struct orb_project * project)
     json_object * dep_list = project->recipe.dependency_list;
 
     for(size_t i = 0; i < json_object_array_length(dep_list); ++i) {
-        const char * depstr = orb_json_get_string_idx(dep_list, i);
+        json_object * tmp = json_object_array_get_idx(dep_list, i);
+        const char * depstr = json_object_get_string(tmp);
         struct orb_project * dep = orb_ctx_get_project(depstr);
 
         if (dep) {
