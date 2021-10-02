@@ -22,9 +22,9 @@ static void _self_cleaning(json_object * dep_list)
     }
 }
 
-static json_object * _json_unlink(json_object * obj)
+static json_object * _json_unlink(json_object * obj, const char * key)
 {
-    json_object * t = json_object_get(obj);
+    json_object * t = json_object_get(orb_json_find(obj, key));
     json_object_put(obj);
     return t;
 }
@@ -33,7 +33,6 @@ static bool _dependency_list(struct orb_project * project)
 {
     json_object * obj = orb_json_find(project->recipe.obj, "dependency_list");
     if (obj) {
-        obj = _json_unlink(obj);
         _self_cleaning(obj);
         project->recipe.dependency_list = obj;
     } else {
@@ -46,7 +45,6 @@ static bool _dependency_include(struct orb_project * project)
 {
     json_object * obj = orb_json_find(project->recipe.obj, "dependency_include");
     if (obj) {
-        obj = _json_unlink(obj);
         project->recipe.dependency_include = obj;
     } else {
         project->recipe.dependency_include = json_object_new_array();
@@ -99,13 +97,13 @@ static bool _objs_path(struct orb_project * project)
 
 static bool _json_receipt_parse(struct orb_project * prj)
 {
-    prj->recipe.obj = json_object_from_file(prj->recipe_path);
-    if (!prj->recipe.obj) {
+    struct json_object * t = json_object_from_file(prj->recipe_path);
+    if (!t) {
         orb_err("error while project recipe read");
         return false;
     }
 
-    prj->recipe.obj = orb_json_find(prj->recipe.obj, "general");
+    prj->recipe.obj = _json_unlink(t, "general");
     if (!prj->recipe.obj) {
         orb_err("general receipt not found");
         return false;
@@ -180,8 +178,6 @@ static json_object * _new_version(void)
 static bool _json_version_parse(struct orb_project * project)
 {
     project->version = json_object_from_file(project->version_path);
-
-    project->version = _json_unlink(project->version);
     if (!project->version)
         project->version = _new_version();
 
@@ -253,7 +249,7 @@ struct orb_project * orb_proj_create(const char * dname)
 {
     struct orb_project * project;
 
-    project = malloc(sizeof(struct orb_project));
+    project = calloc(1, sizeof(struct orb_project));
     if (!project) {
         orb_err("project memory alloc error");
         return NULL;
@@ -300,15 +296,21 @@ void orb_project_free(struct orb_project * project)
     if (project) {
         safe_free(project->root);
         safe_free(project->dirname);
+        safe_free(project->objs_path);
         safe_free(project->meta_path);
         safe_free(project->recipe_path);
         safe_free(project->version_path);
+        safe_free(project->recipe.bin_file_dir);
+        safe_free(project->recipe.output_file);
 
+        json_object_put(project->meta);
+        json_object_put(project->version);
         json_object_put(project->recipe.obj);
-        project->recipe.obj = NULL;
-        project->recipe.exp_incl = NULL;
-        project->recipe.dependency_list = NULL;
-        project->recipe.output_file = NULL;
+
+        json_object_put(project->files.o);
+        json_object_put(project->files.h);
+        json_object_put(project->files.c);
+        json_object_put(project->files.o_old);
 
         free(project);
     }
