@@ -1,43 +1,46 @@
-PROJECT = bin/orbicreo
+BINDIR = bin
+SOURCEDIR = src
+SHAREFS = share
+PROJECT = $(BINDIR)/orbicreo
+ROOTFS = rootfs/
+BINDIST = $(ROOTFS)/usr/bin
 
-CC   = gcc
-OPT  = -O0 -g -std=c99
+CC    = gcc
+STRIP = strip
 
 LIBS  = -ljson-c
 LIBS += -lssl
 LIBS += -lcrypto
 LIBS += -lpthread
 
-OPTIMIZATION  = -O0 -g
+DEBUG_OPT = -O0 -g
+RELEASE_OPT = -O2
+STD = -std=c99
 
 #  Includes
 INCLUDE  = -I src/
 
 #  Compiler Options
-GCFLAGS  = -Wall -Werror -Wextra $(OPTIMIZATION) $(INCLUDE) $(LIBS)
+GCFLAGS  = -Wall -Werror -Wextra $(STD) $(INCLUDE) $(LIBS)
 
-SRC  = src/main.c
-SRC += src/orb_utils/orb_args.c
-SRC += src/orb_init/orb_goal_init.c
-SRC += src/orb_job_agent/orb_job_agent.c
-SRC += src/orb_utils/orb_log.c
-SRC += src/orb_utils/orb_utils.c
-SRC += src/orb_utils/orb_utils_str.c
-SRC += src/orb_types/orb_project.c
-SRC += src/orb_types/orb_context.c
-SRC += src/orb_types/orb_json.c
-SRC += src/orb_build/orb_build_utils.c
-SRC += src/orb_build/orb_build_link.c
-SRC += src/orb_build/orb_build_compile.c
-SRC += src/orb_build/orb_build_mkinclude.c
-SRC += src/orb_build/orb_goal_build.c
-SRC += src/orb_list/orb_goal_list.c
+SRC = $(shell find $(SOURCEDIR) -name '*.c')
 
-all: bin
-	$(CC) $(OPT) $(SRC) $(GCFLAGS) -o $(PROJECT)
+debug: bin
+	$(CC) $(DEBUG_OPT) $(GCFLAGS) $(SRC) -o $(PROJECT)
+
+release: bin
+	$(CC) $(RELEASE_OPT) $(GCFLAGS) $(SRC) -o $(PROJECT)
+	$(STRIP) $(PROJECT)
+
+all: debug
 
 bin:
-	mkdir -p bin
+	@mkdir --parents $(BINDIR)
 
 clean:
-	rm -rf bin/*
+	@rm --recursive --force $(BINDIR)
+
+install:
+	@mkdir --parents $(BINDIST)
+	@cp $(PROJECT) $(BINDIST)
+	@cp --recursive $(SHAREFS)/* $(ROOTFS)
