@@ -27,6 +27,7 @@ bool orb_args_parse(i32 argc, char ** argv)
             { "jobs",       optional_argument, NULL, 'j' },
             { "release",    no_argument,       NULL, 'r' },
             { "verbose",    no_argument,       NULL, 'v' },
+            { "version",    no_argument,       NULL,  0  },
             { 0, 0, NULL, 0 }
         };
 
@@ -37,6 +38,8 @@ bool orb_args_parse(i32 argc, char ** argv)
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0) break;
+            if (!strcmp(long_options[option_index].name, "version"))
+                context.goal = ORB_GOAL_VERS;
             break;
 
         case 'h':

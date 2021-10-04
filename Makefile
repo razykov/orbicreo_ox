@@ -5,6 +5,12 @@ PROJECT = $(BINDIR)/orbicreo
 ROOTFS = rootfs/
 BINDIST = $(ROOTFS)/usr/bin
 
+VERSION_FILE=version
+
+MAJOR=$(shell cat $(VERSION_FILE) | awk -F. '{print $$1}')
+MINOR=$(shell cat $(VERSION_FILE) | awk -F. '{print $$2}')
+BUILD=$(shell cat $(VERSION_FILE) | awk -F. '{print $$3}')
+
 CC    = gcc
 STRIP = strip
 
@@ -18,10 +24,11 @@ RELEASE_OPT = -O2
 STD = -std=c99
 
 #  Includes
-INCLUDE  = -I src/
+INCLUDE  = -I $(SOURCEDIR)
 
-#  Compiler Options
-GCFLAGS  = -Wall -Werror -Wextra $(STD) $(INCLUDE) $(LIBS)
+#  Compiler options
+DEFINES = -DVERSION_MAJOR=\"$(MAJOR)\" -DVERSION_MINOR=\"$(MINOR)\" -DVERSION_BUILD=\"$(BUILD)\"
+GCFLAGS = -Wall -Werror -Wextra $(DEFINES) $(STD) $(INCLUDE) $(LIBS)
 
 SRC = $(shell find $(SOURCEDIR) -name '*.c')
 

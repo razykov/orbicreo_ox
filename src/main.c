@@ -13,7 +13,8 @@ static void _help(void)
     orb_txt("");
     orb_txt("Options:");
     orb_txt("    -h, --help           Print this message");
-    orb_txt("    -i, --init           Initialization orbicreo monorepo in the current directory");
+    orb_txt("    -i, --init           Initialization orbicreo monorepo "
+                                     "in the current directory");
     orb_txt("    -b, --build          Build projects in the current directory");
     orb_txt("    -l, --list           List of projects found in monorepo");
     orb_txt("    -c, --clear          Clear project");
@@ -22,8 +23,23 @@ static void _help(void)
     orb_txt("    -j, --jobs [count]   Number of build threads");
     orb_txt("    -r, --release        Release build");
     orb_txt("    -v, --verbose        Verbose outputs");
+    orb_txt("        --version        Print version info and exit");
     orb_txt("");
     orb_txt("Bug report email <v.razykov@gmail.com>");
+
+    exit(EXIT_SUCCESS);
+}
+
+static void _version(void)
+{
+    orb_txt("Orbicreo "VERSION_MAJOR"."
+                       VERSION_MINOR"."
+                       VERSION_BUILD, context.appname);
+    orb_txt("License GPLv3+: GNU GPL version 3 or later "
+            "<http://gnu.org/licenses/gpl.html>");
+    orb_txt("This is free software:"
+            "you are free to change and redistribute it.");
+    orb_txt("There is NO WARRANTY, to the extent permitted by law.");
 
     exit(EXIT_SUCCESS);
 }
@@ -35,6 +51,7 @@ static void _exec_goal()
     case ORB_GOAL_INIT : orb_goal_init();  break;
     case ORB_GOAL_LIST : orb_goal_list();  break;
     case ORB_GOAL_HELP : _help();          break;
+    case ORB_GOAL_VERS : _version();       break;
     default:
         orb_err("Fatal error. Unknown goal");
         exit(EXIT_FAILURE);

@@ -8,7 +8,8 @@ enum orb_goal {
     ORB_GOAL_BUILD = 0, //! Build project
     ORB_GOAL_HELP,      //! Print help message
     ORB_GOAL_INIT,      //! Create new monorepo
-    ORB_GOAL_LIST       //! Print list of projects in monorepo
+    ORB_GOAL_LIST,      //! Print list of projects in monorepo
+    ORB_GOAL_VERS       //! Print program version
 };
 
 /*!

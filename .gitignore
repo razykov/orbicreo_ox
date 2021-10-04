@@ -1,6 +1,7 @@
 # binaries
 bin/
 lib/
+rootfs/
 
 # Qt creator
 *.cflags
@@ -9,3 +10,4 @@ lib/
 *.creator
 *.cxxflags
 *.includes
+*.config
