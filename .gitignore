@@ -4,6 +4,7 @@ lib/
 rootfs/
 
 # Qt creator
+.qtc_clangd
 *.cflags
 *.creator.user
 *.files

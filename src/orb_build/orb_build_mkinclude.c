@@ -80,9 +80,6 @@ static void export_depends(const char * hfile,
         _hfile_exports(rpath, file, exported);
     }
 
-    ((void)file);
-    ((void)exported);
-
     free(line);
     fclose(fp);
 }
@@ -172,6 +169,7 @@ static void _start_proj_header(struct orb_project * project, FILE * file)
 
 static inline void _end_proj_header(struct orb_project * project, FILE * file)
 {
+    fprintf(file, "\n");
     fprintf(file, "#endif /* %s */\n", _incduard(project));
 }
 

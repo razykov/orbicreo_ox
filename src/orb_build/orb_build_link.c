@@ -1,8 +1,9 @@
 #define _GNU_SOURCE
+#include <stddef.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include "../orb_utils/orb_log.h"
-#include "../orb_utils/orb_args.h"
 #include "../orb_utils/orb_utils.h"
 #include "../orb_types/orb_context.h"
 #include "../orb_utils/orb_utils_str.h"
@@ -88,7 +89,7 @@ static const char * _liblist(struct orb_project * project)
 
     list[0] = '\0';
 
-    if(dep_list)
+    if(dep_list) {
         for(size_t i = 0; i < json_object_array_length(dep_list); ++i) {
             json_object * dep = json_object_array_get_idx(dep_list, i);
             const char * lib = json_object_get_string(dep);
@@ -103,7 +104,9 @@ static const char * _liblist(struct orb_project * project)
             list[off + len] = ' ';
             off += len + 1;
         }
-    list[off - 1] = '\0';
+    }
+    if (off != 0)
+        list[off - 1] = '\0';
 
     return list;
 }
@@ -116,8 +119,25 @@ static size_t utf8_strlen(const char *s)
     return count;
 }
 
+static const char * _restrict_path(const char * path, u32 max_len) {
+    const char * ptr;
+    static __thread char buff[B_KB(4)];
+    size_t pathlen = strlen(path);
+
+    if (pathlen > max_len) {
+        snprintf(buff, max_len, "..%s", path + pathlen - max_len);
+        ptr = buff;
+    } else
+        ptr = path;
+    return ptr;
+}
+
 static void _ofiles_print(struct orb_project * project)
 {
+    // repeat "─" fifty times
+    const u32 max_line_len = 50;
+    const char * line = "──────────────────────────────────────────────────";
+
     bool first = true;
     u32 root_off;
     size_t ofp_len;
@@ -126,7 +146,8 @@ static void _ofiles_print(struct orb_project * project)
 
     root_off = strlen(context.root) + sizeof(char);
     output_file_path = project->recipe.output_file + context.rt_off;
-    ofp_len = utf8_strlen(output_file_path);
+    output_file_path = _restrict_path(output_file_path, max_line_len);
+    ofp_len = utf8_strlen(output_file_path) * strlen("─");
 
     for(size_t i = 0; i < json_object_array_length(ofiles); ++i) {
         json_object * ofile = json_object_array_get_idx(ofiles, i);
@@ -136,9 +157,9 @@ static void _ofiles_print(struct orb_project * project)
                       json_object_get_string(ofile) + root_off);
         first = false;
     }
-    orb_stat(PPL, NULL, "  │  ┌─%*s─┐", ofp_len);
-    orb_stat(PPL, NULL, "  └──┤ %s │",  output_file_path);
-    orb_stat(PPL, NULL, "     └─%*s─┘", ofp_len);
+    orb_stat(PPL, NULL, "  │  ┌─%.*s─┐", ofp_len, line);
+    orb_stat(PPL, NULL, "  └──┤ %s │",   output_file_path);
+    orb_stat(PPL, NULL, "     └─%.*s─┘", ofp_len, line);
 }
 
 static char * _output_file_path(struct orb_project * project, enum out_path op)

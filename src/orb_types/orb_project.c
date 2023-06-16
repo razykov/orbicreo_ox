@@ -16,7 +16,7 @@ static void _self_cleaning(json_object * dep_list)
     for(ssize_t i = json_object_array_length(dep_list) - 1; i >= 0; --i) {
         json_object * dep = json_object_array_get_idx(dep_list, i);
         const char * dep_str = json_object_get_string(dep);
-        if (!strcmp(dep_str, context.target_proj))
+        if (context.target_proj && !strcmp(dep_str, context.target_proj))
             json_object_array_del_idx(dep_list, i, 1);
     }
 }
@@ -66,9 +66,12 @@ static const char * _dest(struct orb_project * project)
     while (*dir_dest == '/')
         ++dir_dest;
 
-    sprintf(buff, "%s/bin/%s", context.root, dir_dest);
-    if (buff[strlen(buff) - 1] != '/')
-        buff[strlen(buff)] = '/';
+    snprintf(buff, sizeof(buff) - 1, "%s/bin/%s", context.root, dir_dest);
+    int bufflen = strlen(buff);
+    if (buff[bufflen - 1] != '/') {
+        buff[bufflen] = '/';
+        buff[bufflen + 1] = '\0';
+    }
 
     return buff;
 }
