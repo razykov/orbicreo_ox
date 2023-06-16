@@ -212,10 +212,11 @@ bool orb_link_project(struct orb_project * project)
     char * bin_full  = _output_file_path(project, OPATH_FULL);
 
     orb_inf("Linking");
-    orb_stat(CYN, "Linkable libraries", "%s", _liblist(project));
+    if (json_object_array_length(project->recipe.dependency_list) != 0)
+        orb_stat(CYN, "Linkable libraries", "%s", _liblist(project));
 
     if (!project->compile_turn && orb_file_exist(bin_full)) {
-        orb_stat(PPL, NULL, "  %s already exist", bin_full + context.rt_off);
+        orb_stat(PPL, NULL, "  .%s already exist", bin_full + context.rt_off);
         free(bin_full);
         return true;
     }

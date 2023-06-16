@@ -4,10 +4,8 @@
 #include <json-c/json.h>
 #include "orb_goal_build.h"
 #include "orb_build_link.h"
-#include "orb_build_utils.h"
 #include "orb_build_compile.h"
 #include "../orb_utils/orb_log.h"
-#include "../orb_utils/orb_args.h"
 #include "../orb_utils/orb_utils.h"
 #include "../orb_types/orb_context.h"
 #include "../orb_job_agent/orb_job_agent.h"
@@ -128,7 +126,8 @@ static bool _build_project(struct orb_project * project)
     orb_ret();
     orb_inf("Project %s%s%s build started",
             ORB_COL(ORB_COLOUR_CYAN), project->name, ORB_COL(ORB_COLOUR_WHITE));
-    orb_stat(CYN, "Directory of project", "%s", project->root);
+    orb_stat(CYN, "Directory of project",
+                  ".%s", project->root + context.rt_off);
 
     orb_try(orb_mkdir_p(project->objs_path));
 

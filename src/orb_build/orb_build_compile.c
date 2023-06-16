@@ -118,7 +118,7 @@ static i32 _file_compile(void * payload)
     ofile = ofile_path + context.rt_off;
 
     if (orb_file_exist(ofile_path)) {
-        orb_stat(PPL, NULL, "  %s already exists", ofile);
+        orb_stat(PPL, NULL, "  .%s already exists", ofile);
         orb_json_string(_payload->project->files.o, NULL, ofile_path);
     } else {
         char * command = NULL;

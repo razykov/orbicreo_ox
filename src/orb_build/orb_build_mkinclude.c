@@ -202,7 +202,7 @@ bool orb_mkinclude(struct orb_project * project)
                 res = true;
 
         orb_stat(res ? PPL : RED, NULL,
-                                  "  %s", _include_fname(project) + root_off);
+                                  "  .%s", _include_fname(project) + root_off);
     }
     return true;
 }
