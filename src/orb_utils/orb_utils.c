@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <openssl/evp.h>
+#include <openssl/types.h>
 #include <openssl/sha.h>
 #include "orb_utils.h"
 #include "../orb_utils/orb_log.h"
@@ -193,9 +195,11 @@ orb_sha1 orb_file_sha1(const char * path)
 {
     i32 fd;
     ssize_t nread;
-    SHA_CTX ctx;
+    EVP_MD_CTX * ctx2;
     static __thread u8 sha[SHA_DIGEST_LENGTH];
     u8 buff[B_KB(4)];
+
+    ctx2 = EVP_MD_CTX_new();
 
     if(!path || !orb_file_exist(path)) {
         orb_wrn("file %s not exist", path);
@@ -209,13 +213,13 @@ orb_sha1 orb_file_sha1(const char * path)
         return NULL;
     }
 
-    if (SHA1_Init(&ctx) != 1) {
+    if (EVP_DigestInit_ex(ctx2, EVP_sha1(), NULL) != 1) {
         _try_close(fd, path);
         return NULL;
     }
 
     while ((nread = read(fd, buff, B_KB(4))) > 0) {
-        if (SHA1_Update(&ctx, buff, nread) != 1) {
+        if (EVP_DigestUpdate(ctx2, buff, nread) != 1) {
             _try_close(fd, path);
             return NULL;
         }
@@ -223,11 +227,13 @@ orb_sha1 orb_file_sha1(const char * path)
     if (nread == -1)
         orb_err("error while read file %s", path);
 
-    if (SHA1_Final(sha, &ctx) != 1) {
+    if (EVP_DigestFinal_ex(ctx2, sha, NULL) != 1) {
         _try_close(fd, path);
         return NULL;
     }
     _try_close(fd, path);
+
+    EVP_MD_CTX_destroy(ctx2);
 
     return sha;
 }
